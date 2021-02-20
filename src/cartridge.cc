@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "cartridge.h"
-#include "memory_bank_controllers/no_mbc.h"
+#include "no_mbc.h"
 
 #define KB 1024
 
