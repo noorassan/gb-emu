@@ -1,6 +1,6 @@
 #include <memory>
 
-#include "../src/bus.h"
+#include "bus.h"
 
 int main() {
     Bus bus;

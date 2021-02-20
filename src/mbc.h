@@ -2,7 +2,7 @@
 
 class MemoryBankController {
 public:
-    virtual ~MemoryBankController() {};
+    virtual ~MemoryBankController() = default;
 
 public:
     virtual bool read(uint16_t addr, uint16_t &mapped_addr) = 0;
