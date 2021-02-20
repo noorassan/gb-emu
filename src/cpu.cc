@@ -239,13 +239,12 @@ void CPU::connectBus(Bus *bus) {
 
 // CPU functions
 void CPU::reset() {
-    f = 0xB0;
-    af = 0x0001;
+    af = 0x01B0;
     bc = 0x0013;
     de = 0x00D8;
     hl = 0x014D;
-    pc = 0x0100;
     sp = 0xFFFE;
+    pc = 0x0100;
 }
 
 void CPU::clock() {
