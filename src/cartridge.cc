@@ -5,6 +5,7 @@
 
 #include "cartridge.h"
 #include "no_mbc.h"
+#include "mbc_1.h"
 
 #define KB 1024
 
@@ -49,8 +50,12 @@ uint8_t Cartridge::read(uint16_t addr) {
 void Cartridge::write(uint16_t addr, uint8_t data) {
     uint16_t mapped_address;
 
-    if (mbc->write(addr, data, mapped_address)) {
-        rom[mapped_address] = data;
+    // We need to call mbc->write because this might be a write to ROM
+    // that alters the MBC state. If the MBC tells us that this is a write
+    // we actually need to perform then we check that we actually have cart
+    // RAM and then perform it.
+    if (mbc->write(addr, data, mapped_address) && ram.size() > 0) {
+        ram[mapped_address] = data;
     }
 }
 
@@ -99,6 +104,8 @@ void Cartridge::setMBC() {
 
     if (mbc_type == 0) {
         mbc = std::make_shared<NoMBC>();
+    } else if (mbc_type == 0x01 || mbc_type == 0x02 || mbc_type == 0x03){
+        mbc = std::make_shared<MBC1>();
     } else {
         throw std::invalid_argument("Invalid Memory Bank Controller type read from cartridge.");
     }
