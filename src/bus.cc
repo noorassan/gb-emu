@@ -1,4 +1,5 @@
 #include "bus.h"
+#include <iostream>
 
 
 Bus::Bus() {
@@ -9,13 +10,22 @@ Bus::Bus() {
 }
 
 void Bus::write(uint16_t addr, uint8_t data) {
+    if (addr == 0xFF01) {
+        std::cout << data << std::endl;
+    }
+
     if (addr >= 0x0000 && addr < 0x8000) {
-        return cart->write(addr, data);
+        cart->write(addr, data);
     } else if (addr >= 0x8000 && addr < 0xA000) {
+        std::cout << data << std::endl;
         ram[addr] = data;
     } else if (addr >= 0xA000 && addr < 0xC000) {
-        return cart->write(addr, data);
-    } else if (addr >= 0xC000 && addr <= 0xFFFF) {
+        cart->write(addr, data);
+    } else if (addr >= 0xC000 && addr < 0xE000) {
+        ram[addr] = data;
+    } else if (addr >= 0xE000 && addr < 0xFE00) {
+        ram[addr - 0x2000] = data;
+    } else if (addr >= 0xFE00 && addr <= 0xFFFF) {
         ram[addr] = data;
     }
 }
@@ -27,7 +37,11 @@ uint8_t Bus::read(uint16_t addr) {
         return ram[addr];
     } else if (addr >= 0xA000 && addr < 0xC000) {
         return cart->read(addr);
-    } else if (addr >= 0xC000 && addr <= 0xFFFF) {
+    } else if (addr >= 0xC000 && addr < 0xE000) {
+        return ram[addr];
+    } else if (addr >= 0xE000 && addr < 0xFE00) {
+        return ram[addr - 0x2000];
+    } else if (addr >= 0xFE00 && addr <= 0xFFFF) {
         return ram[addr];
     }
 
