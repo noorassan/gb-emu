@@ -233,7 +233,7 @@ CPU::CPU() {
         {"RET Z",           8,  0,   (OpArg) IS_Z,  0,              &CPU::RET},
         {"RET",             4,  0,   (OpArg) NONE,  0,              &CPU::RET},
         {"JP Z, {d16}",     12, 2,   (OpArg) IS_Z,  &fetched,       &CPU::JP},
-        {"PREFIX CB",       0,  2,   &fetched,      0,              &CPU::PREFIX_CB},
+        {"PREFIX CB",       0,  1,   &fetched,      0,              &CPU::PREFIX_CB},
         {"CALL Z, {d16}",   12, 2,   (OpArg) IS_Z,  &fetched,       &CPU::CALL},
         {"CALL {d16}",      12, 2,   (OpArg) NONE,  &fetched,       &CPU::CALL},
         {"ADC A, {d8}",     8,  1,   &a,            &fetched,       &CPU::ADC_REG_8_VAL_8},
@@ -274,7 +274,7 @@ CPU::CPU() {
         {"RST 0x28",        16, 0,   (OpArg) NONE,  (OpArg) 0x28,   &CPU::RST},
         // 0xF0
         {"LDH A, ({d8})",   12, 1,   &a,            &fetched,       &CPU::LDH_REG_8_MEM},
-        {"POP HL",          12, 0,   &hl,           0,              &CPU::POP},
+        {"POP AF",          12, 0,   &af,           0,              &CPU::POP},
         {"LD A, (C)",       8,  0,   &a,            &c,             &CPU::LDH_REG_8_MEM},
         {"DI",              4,  0,   0,             0,              &CPU::DI},
         {"???",             0,  0,   0,             0,              &CPU::UNKNOWN},
@@ -317,10 +317,6 @@ void CPU::reset() {
     pc = 0x0100;
 }
 
-// Allows PPU & other devices to request a CPU interrupt
-void CPU::irq(INTERRUPT intr) {
-    write(IF, read(IF) | intr);
-}
 
 void CPU::clock() {
     // If there are no more cycles left to complete, then we can execute the next instruction
@@ -361,25 +357,42 @@ void CPU::clock() {
     }
 
     cycles--;
-    clock_count++;
 }
 
 #ifdef LOGFILE
 void CPU::print_log(uint8_t opcode, INSTRUCTION instr) {
-    file << std::hex << std::showbase;
-    file << "Opcode: " << unsigned(opcode) << std::endl;
-    file << "Instruction: " << instr.name << ", " <<
-            "Fetched: " << unsigned(fetched) << std::endl;
-    file << "REGISTER STATES PRIOR TO EXECUTION: " << std::endl <<
-            "a: " << unsigned(a) << ", " << "f: " << unsigned(f) << std::endl <<
-            "b: " << unsigned(b) << ", " << "c: " << unsigned(c) << std::endl <<
-            "d: " << unsigned(d) << ", " << "e: " << unsigned(e) << std::endl <<
-            "h: " << unsigned(h) << ", " << "l: " << unsigned(l) << std::endl <<
-            "sp: " << unsigned(sp) << std::endl <<
-            "pc: " << unsigned(pc) << std::endl;
-    file << "FLAGS: Z N H C" << std::endl << "       ";
-    file << std::dec << std::noshowbase;
-    file << getFlag(Z) << " " << getFlag(N) << " " << getFlag(H) <<  " " << getFlag(C) << std::endl;
+    //file << std::hex << std::showbase;
+    //file << "Opcode: " << unsigned(opcode) << std::endl;
+    //file << "Instruction: " << instr.name << ", " <<
+    //        "Fetched: " << unsigned(fetched) << std::endl;
+    //file << "REGISTER STATES PRIOR TO EXECUTION: " << std::endl <<
+    //        "a: " << unsigned(a) << ", " << "f: " << unsigned(f) << std::endl <<
+    //        "b: " << unsigned(b) << ", " << "c: " << unsigned(c) << std::endl <<
+    //        "d: " << unsigned(d) << ", " << "e: " << unsigned(e) << std::endl <<
+    //        "h: " << unsigned(h) << ", " << "l: " << unsigned(l) << std::endl <<
+    //        "sp: " << unsigned(sp) << std::endl <<
+    //        "pc: " << unsigned(pc) << std::endl;
+    //file << "FLAGS: Z N H C" << std::endl << "       ";
+    //file << std::dec << std::noshowbase;
+    //file << getFlag(Z) << " " << getFlag(N) << " " << getFlag(H) <<  " " << getFlag(C) << std::endl;
+    //file << std::endl;
+    file << std::hex << std::uppercase;
+    file << "A: " << std::setfill('0') << std::setw(2) << unsigned(a) << " "; 
+    file << "F: " << std::setfill('0') << std::setw(2) << unsigned(f) << " ";
+    file << "B: " << std::setfill('0') << std::setw(2) << unsigned(b) << " ";
+    file << "C: " << std::setfill('0') << std::setw(2) << unsigned(c) << " ";
+    file << "D: " << std::setfill('0') << std::setw(2) << unsigned(d) << " ";
+    file << "E: " << std::setfill('0') << std::setw(2) << unsigned(e) << " ";
+    file << "H: " << std::setfill('0') << std::setw(2) << unsigned(h) << " ";
+    file << "L: " << std::setfill('0') << std::setw(2) << unsigned(l) << " ";
+    file << "SP: " << std::setfill('0') << std::setw(4) << unsigned(sp) << " ";
+    file << "PC: " << "00:" << std::setfill('0') << std::setw(4) << unsigned(pc) << " ";
+    file << "(";
+    file << std::setfill('0') << std::setw(2) << unsigned(read(pc));
+    file << " " << std::setfill('0') << std::setw(2) << unsigned(read(pc+1));
+    file << " " << std::setfill('0') << std::setw(2) << unsigned(read(pc+2));
+    file << " " << std::setfill('0') << std::setw(2) << unsigned(read(pc+3));
+    file << ")";
     file << std::endl;
     
     return;
@@ -459,7 +472,6 @@ bool CPU::handleInterrupt() {
 // Most commonly arg1 and arg2 will be the memory address of a register or immediate value (fetched)
 
 uint8_t CPU::PREFIX_CB() {
-    throw std::invalid_argument("PREFIX CB Opcode.");
     return 0;
 }
 
@@ -511,8 +523,8 @@ uint8_t CPU::LD_REG_8_VAL_8() {
 
 uint8_t CPU::LD_MEM_VAL_16() {
     uint16_t data = DR_16(arg2);
-    write(DR_16(arg1) + 0, (uint8_t) data >> 0);
-    write(DR_16(arg1) + 1, (uint8_t) data >> 8);
+    write(DR_16(arg1) + 0, (uint8_t) (data >> 0));
+    write(DR_16(arg1) + 1, (uint8_t) (data >> 8));
     return 0;
 }
 
@@ -547,7 +559,7 @@ uint8_t CPU::LDHL_REG_16_VAL_8() {
     uint16_t temp = DR_16(arg1);
     arg1 = &temp;
 
-    // This instruction is perfect as it treats arg2 as unsigned and sets
+    // This instruction is perfect as it treats arg2 as signed and sets
     // flags exactly how we need
     ADD_REG_16_VAL_8();
 
@@ -708,7 +720,7 @@ uint8_t CPU::ADD_REG_8_MEM () {
 }
 
 uint8_t CPU::ADC_REG_8_VAL_8() {
-    uint8_t c = f & C;
+    uint8_t c = (f & C) >> 4;
     bool half_carry = (DR_8(arg1) & 0x0F) + (DR_8(arg2) & 0x0F) + c > 0x0F;
     uint16_t sum = DR_8(arg1) + DR_8(arg2) + c;
     DR_8(arg1) = (uint8_t) sum;
@@ -721,7 +733,7 @@ uint8_t CPU::ADC_REG_8_VAL_8() {
 }
 
 uint8_t CPU::ADC_REG_8_MEM() {
-    uint8_t c = f & C;
+    uint8_t c = (f & C) >> 4;
     uint8_t val = read(DR_16(arg2));
     bool half_carry = (DR_8(arg1) & 0x0F) + (val & 0x0F) + c > 0x0F;
     uint16_t sum = DR_8(arg1) + val + c;
@@ -751,7 +763,7 @@ uint8_t CPU::SUB_REG_8_VAL_8() {
 
 uint8_t CPU::SUB_REG_8_MEM() {
     uint8_t val1 = DR_8(arg1);
-    uint8_t val2 = DR_8(arg2);
+    uint8_t val2 = read(DR_16(arg2));
     bool half_carry = (val1 & 0x0F) < (val2 & 0x0F);
     DR_8(arg1) = val1 - val2;
 
@@ -763,11 +775,11 @@ uint8_t CPU::SUB_REG_8_MEM() {
 }
 
 uint8_t CPU::SBC_REG_8_VAL_8() {
-    uint8_t c = f & C;
+    uint8_t c = (f & C) >> 4;
     uint8_t val1 = DR_8(arg1);
     uint8_t val2 = DR_8(arg2);
     bool half_carry = (val1 & 0x0F) < (val2 & 0x0F + c);
-    DR_8(arg1) = val1 - (val2 + 1);
+    DR_8(arg1) = val1 - (val2 + c);
 
     setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 1);
@@ -777,11 +789,11 @@ uint8_t CPU::SBC_REG_8_VAL_8() {
 }
 
 uint8_t CPU::SBC_REG_8_MEM() {
-    uint8_t c = f & C;
+    uint8_t c = (f & C) >> 4;
     uint8_t val1 = DR_8(arg1);
-    uint8_t val2 = DR_8(arg2);
+    uint8_t val2 = read(DR_16(arg2));
     bool half_carry = (val1 & 0x0F) < (val2 & 0x0F + c);
-    DR_8(arg1) = val1 - (val2 + 1);
+    DR_8(arg1) = val1 - (val2 + c);
 
     setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 1);
@@ -794,7 +806,7 @@ uint8_t CPU::SBC_REG_8_MEM() {
 uint8_t CPU::AND_REG_8_VAL_8(){
     DR_8(arg1) &= DR_8(arg2);
 
-    setFlag(Z, DR_8(arg1));
+    setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 1);
     setFlag(H, 1);
     setFlag(C, 0);
@@ -804,7 +816,7 @@ uint8_t CPU::AND_REG_8_VAL_8(){
 uint8_t CPU::AND_REG_8_MEM() {
     DR_8(arg1) &= read(DR_8(arg2));
 
-    setFlag(Z, DR_8(arg1));
+    setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 0);
     setFlag(H, 1);
     setFlag(C, 0);
@@ -814,7 +826,7 @@ uint8_t CPU::AND_REG_8_MEM() {
 uint8_t CPU::XOR_REG_8_VAL_8() {
     DR_8(arg1) ^= DR_8(arg2);
 
-    setFlag(Z, DR_8(arg1));
+    setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 0);
     setFlag(H, 0);
     setFlag(C, 0);
@@ -822,9 +834,9 @@ uint8_t CPU::XOR_REG_8_VAL_8() {
 }
 
 uint8_t CPU::XOR_REG_8_MEM() {
-    DR_8(arg1) ^= read(DR_8(arg2));
+    DR_8(arg1) ^= read(DR_16(arg2));
 
-    setFlag(Z, DR_8(arg1));
+    setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 0);
     setFlag(H, 0);
     setFlag(C, 0);
@@ -834,7 +846,7 @@ uint8_t CPU::XOR_REG_8_MEM() {
 uint8_t CPU::OR_REG_8_VAL_8() {
     DR_8(arg1) |= DR_8(arg2);
 
-    setFlag(Z, DR_8(arg1));
+    setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 0);
     setFlag(H, 0);
     setFlag(C, 0);
@@ -842,9 +854,9 @@ uint8_t CPU::OR_REG_8_VAL_8() {
 }
 
 uint8_t CPU::OR_REG_8_MEM() {
-    DR_8(arg1) |= read(DR_8(arg2));
+    DR_8(arg1) |= read(DR_16(arg2));
 
-    setFlag(Z, DR_8(arg1));
+    setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 0);
     setFlag(H, 0);
     setFlag(C, 0);
@@ -865,7 +877,7 @@ uint8_t CPU::CP_REG_8_VAL_8() {
 
 uint8_t CPU::CP_REG_8_MEM() {
     uint8_t val1 = DR_8(arg1);
-    uint8_t val2 = DR_8(arg2);
+    uint8_t val2 = read(DR_16(arg2));
     bool half_carry = (val1 & 0x0F) < (val2 & 0x0F);
 
     setFlag(Z, DR_8(arg1) == 0);
@@ -974,8 +986,8 @@ uint8_t CPU::JP_MEM() {
 // arg1 is the register we're pushing to the stack
 uint8_t CPU::PUSH() {
     sp -= 2;
-    write(sp + 0, (uint8_t) DR_16(arg1) >> 0);
-    write(sp + 1, (uint8_t) DR_16(arg1) >> 8);
+    write(sp + 0, (uint8_t) (DR_16(arg1) >> 0));
+    write(sp + 1, (uint8_t) (DR_16(arg1) >> 8));
 
     return 0;
 }

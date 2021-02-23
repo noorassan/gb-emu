@@ -4,6 +4,7 @@
 
 Bus::Bus() {
     cpu.connectBus(this);
+    timer.connectBus(this);
     
     // zero out ram
     for (uint8_t &i : ram) i = 0x00;
@@ -11,13 +12,12 @@ Bus::Bus() {
 
 void Bus::write(uint16_t addr, uint8_t data) {
     if (addr == 0xFF01) {
-        std::cout << data << std::endl;
+        std::cout << data;
     }
 
     if (addr >= 0x0000 && addr < 0x8000) {
         cart->write(addr, data);
     } else if (addr >= 0x8000 && addr < 0xA000) {
-        std::cout << data << std::endl;
         ram[addr] = data;
     } else if (addr >= 0xA000 && addr < 0xC000) {
         cart->write(addr, data);
@@ -48,6 +48,10 @@ uint8_t Bus::read(uint16_t addr) {
     return 0;
 }
 
+void Bus::requestInterrupt(INTERRUPT intr) {
+    write(IF, read(IF) | intr);
+}
+
 void Bus::reset() {
     cpu.reset();
 
@@ -66,7 +70,11 @@ void Bus::reset() {
 }
 
 void Bus::clock() {
-    cpu.clock();
+    timer.tick();
+
+    if (clock_cycles % 4 == 0) {
+        cpu.clock();
+    }
 }
 
 void Bus::insertCartridge(const std::shared_ptr<Cartridge> cart) {
