@@ -59,7 +59,7 @@ CPU::CPU() {
         {"INC H",           4,  0,   &h,            0,              &CPU::INC_REG_8},
         {"DEC H",           4,  0,   &h,            0,              &CPU::DEC_REG_8},
         {"LD H, {d8}",      8,  1,   &h,            &fetched,       &CPU::LD_REG_8_VAL_8},
-        {"DAA",             4,  0,   &a,            0,              &CPU::DA},
+        {"DAA",             4,  0,   &a,            0,              &CPU::DAA},
         {"JR Z, {r8}",      8,  1,   (OpArg) IS_Z,  &fetched,       &CPU::JR},
         {"ADD HL, HL",      8,  0,   &hl,           &hl,            &CPU::ADD_REG_16_VAL_16},
         {"LDI A, (HL)",     8,  0,   &a,            &hl,            &CPU::LDI_REG_8_MEM},
@@ -233,7 +233,7 @@ CPU::CPU() {
         {"RET Z",           8,  0,   (OpArg) IS_Z,  0,              &CPU::RET},
         {"RET",             4,  0,   (OpArg) NONE,  0,              &CPU::RET},
         {"JP Z, {d16}",     12, 2,   (OpArg) IS_Z,  &fetched,       &CPU::JP},
-        {"PREFIX CB",       0,  1,   &fetched,      0,              &CPU::PREFIX_CB},
+        {"PREFIX CB",       0,  1,   0,             0,              nullptr},
         {"CALL Z, {d16}",   12, 2,   (OpArg) IS_Z,  &fetched,       &CPU::CALL},
         {"CALL {d16}",      12, 2,   (OpArg) NONE,  &fetched,       &CPU::CALL},
         {"ADC A, {d8}",     8,  1,   &a,            &fetched,       &CPU::ADC_REG_8_VAL_8},
@@ -265,7 +265,7 @@ CPU::CPU() {
         {"AND {d8}",        8,  1,   &a,            &fetched,       &CPU::AND_REG_8_VAL_8},
         {"RST 0x20",        16, 0,   (OpArg) NONE,  (OpArg) 0x20,   &CPU::RST},
         {"ADD SP, {r8}",    16, 1,   &sp,           &fetched,       &CPU::ADD_REG_16_VAL_8},
-        {"JP (HL)",         4,  0,   &hl,           0,              &CPU::JP_MEM},
+        {"JP (HL)",         0,  0,   0,             &hl,            &CPU::JP},
         {"LD ({d16}), A",   16, 2,   &fetched,      &a,             &CPU::LD_MEM_VAL_8},
         {"???",             0,  0,   0,             0,              &CPU::UNKNOWN},
         {"???",             0,  0,   0,             0,              &CPU::UNKNOWN},
@@ -289,6 +289,280 @@ CPU::CPU() {
         {"???",             0,  0,   0,             0,              &CPU::UNKNOWN},
         {"CP {d8}",         8,  1,   &a,            &fetched,       &CPU::CP_REG_8_VAL_8},
         {"RST 0x38",        16, 0,   (OpArg) NONE,  (OpArg) 0x38,   &CPU::RST}
+    };
+
+    lookup_cb = {
+        {"RLC B",           8,  1,   &b,            0,              &CPU::RLC_REG_8},
+        {"RLC C",           8,  1,   &c,            0,              &CPU::RLC_REG_8},
+        {"RLC D",           8,  1,   &d,            0,              &CPU::RLC_REG_8},
+        {"RLC E",           8,  1,   &e,            0,              &CPU::RLC_REG_8},
+        {"RLC H",           8,  1,   &h,            0,              &CPU::RLC_REG_8},
+        {"RLC L",           8,  1,   &l,            0,              &CPU::RLC_REG_8},
+        {"RLC (HL)",        16, 1,   &hl,           0,              &CPU::RLC_MEM},
+        {"RLC A",           8,  1,   &a,            0,              &CPU::RLC_REG_8},
+        {"RRC B",           8,  1,   &b,            0,              &CPU::RRC_REG_8},
+        {"RRC C",           8,  1,   &c,            0,              &CPU::RRC_REG_8},
+        {"RRC D",           8,  1,   &d,            0,              &CPU::RRC_REG_8},
+        {"RRC E",           8,  1,   &e,            0,              &CPU::RRC_REG_8},
+        {"RRC H",           8,  1,   &h,            0,              &CPU::RRC_REG_8},
+        {"RRC L",           8,  1,   &l,            0,              &CPU::RRC_REG_8},
+        {"RRC (HL)",        16, 1,   &hl,           0,              &CPU::RRC_MEM},
+        {"RRC A",           8,  1,   &a,            0,              &CPU::RRC_REG_8},
+        // 0x10
+        {"RL B",            8,  1,   &b,            0,              &CPU::RL_REG_8},
+        {"RL C",            8,  1,   &c,            0,              &CPU::RL_REG_8},
+        {"RL D",            8,  1,   &d,            0,              &CPU::RL_REG_8},
+        {"RL E",            8,  1,   &e,            0,              &CPU::RL_REG_8},
+        {"RL H",            8,  1,   &h,            0,              &CPU::RL_REG_8},
+        {"RL L",            8,  1,   &l,            0,              &CPU::RL_REG_8},
+        {"RL (HL)",         16, 1,   &hl,           0,              &CPU::RL_MEM},
+        {"RL A",            8,  1,   &a,            0,              &CPU::RL_REG_8},
+        {"RR B",            8,  1,   &b,            0,              &CPU::RR_REG_8},
+        {"RR C",            8,  1,   &c,            0,              &CPU::RR_REG_8},
+        {"RR D",            8,  1,   &d,            0,              &CPU::RR_REG_8},
+        {"RR E",            8,  1,   &e,            0,              &CPU::RR_REG_8},
+        {"RR H",            8,  1,   &h,            0,              &CPU::RR_REG_8},
+        {"RR L",            8,  1,   &l,            0,              &CPU::RR_REG_8},
+        {"RR (HL)",         16, 1,   &hl,           0,              &CPU::RR_MEM},
+        {"RR A",            8,  1,   &a,            0,              &CPU::RR_REG_8},
+        // 0x20
+        {"SLA B",           8,  1,   &b,            0,              &CPU::SLA_REG_8},
+        {"SLA C",           8,  1,   &c,            0,              &CPU::SLA_REG_8},
+        {"SLA D",           8,  1,   &d,            0,              &CPU::SLA_REG_8},
+        {"SLA E",           8,  1,   &e,            0,              &CPU::SLA_REG_8},
+        {"SLA H",           8,  1,   &h,            0,              &CPU::SLA_REG_8},
+        {"SLA L",           8,  1,   &l,            0,              &CPU::SLA_REG_8},
+        {"SLA (HL)",        16, 1,   &hl,           0,              &CPU::SLA_MEM},
+        {"SLA A",           8,  1,   &a,            0,              &CPU::SLA_REG_8},
+        {"SRA B",           8,  1,   &b,            0,              &CPU::SRA_REG_8},
+        {"SRA C",           8,  1,   &c,            0,              &CPU::SRA_REG_8},
+        {"SRA D",           8,  1,   &d,            0,              &CPU::SRA_REG_8},
+        {"SRA E",           8,  1,   &e,            0,              &CPU::SRA_REG_8},
+        {"SRA H",           8,  1,   &h,            0,              &CPU::SRA_REG_8},
+        {"SRA L",           8,  1,   &l,            0,              &CPU::SRA_REG_8},
+        {"SRA (HL)",        16, 1,   &hl,           0,              &CPU::SRA_MEM},
+        {"SRA A",           8,  1,   &a,            0,              &CPU::SRA_REG_8},
+        // 0x30
+        {"SWAP B",          8,  1,   &b,            0,              &CPU::SWAP_REG_8},
+        {"SWAP C",          8,  1,   &c,            0,              &CPU::SWAP_REG_8},
+        {"SWAP D",          8,  1,   &d,            0,              &CPU::SWAP_REG_8},
+        {"SWAP E",          8,  1,   &e,            0,              &CPU::SWAP_REG_8},
+        {"SWAP H",          8,  1,   &h,            0,              &CPU::SWAP_REG_8},
+        {"SWAP L",          8,  1,   &l,            0,              &CPU::SWAP_REG_8},
+        {"SWAP (HL)",       16, 1,   &hl,           0,              &CPU::SWAP_MEM},
+        {"SWAP A",          8,  1,   &a,            0,              &CPU::SWAP_REG_8},
+        {"SRL B",           8,  1,   &b,            0,              &CPU::SRL_REG_8},
+        {"SRL C",           8,  1,   &c,            0,              &CPU::SRL_REG_8},
+        {"SRL D",           8,  1,   &d,            0,              &CPU::SRL_REG_8},
+        {"SRL E",           8,  1,   &e,            0,              &CPU::SRL_REG_8},
+        {"SRL H",           8,  1,   &h,            0,              &CPU::SRL_REG_8},
+        {"SRL L",           8,  1,   &l,            0,              &CPU::SRL_REG_8},
+        {"SRL (HL)",        16, 1,   &hl,           0,              &CPU::SRL_MEM},
+        {"SRL A",           8,  1,   &a,            0,              &CPU::SRL_REG_8},
+        // 0x40
+        {"BIT 0, B",        8,  1,   0,             &b,             &CPU::BIT_REG_8},
+        {"BIT 0, C",        8,  1,   0,             &c,             &CPU::BIT_REG_8},
+        {"BIT 0, D",        8,  1,   0,             &d,             &CPU::BIT_REG_8},
+        {"BIT 0, E",        8,  1,   0,             &e,             &CPU::BIT_REG_8},
+        {"BIT 0, H",        8,  1,   0,             &h,             &CPU::BIT_REG_8},
+        {"BIT 0, L",        8,  1,   0,             &l,             &CPU::BIT_REG_8},
+        {"BIT 0, (HL)",     16, 1,   0,             &hl,            &CPU::BIT_MEM},
+        {"BIT 0, A",        8,  1,   0,             &a,             &CPU::BIT_REG_8},
+        {"BIT 1, B",        8,  1,   (OpArg) 1,     &b,             &CPU::BIT_REG_8},
+        {"BIT 1, C",        8,  1,   (OpArg) 1,     &c,             &CPU::BIT_REG_8},
+        {"BIT 1, D",        8,  1,   (OpArg) 1,     &d,             &CPU::BIT_REG_8},
+        {"BIT 1, E",        8,  1,   (OpArg) 1,     &e,             &CPU::BIT_REG_8},
+        {"BIT 1, H",        8,  1,   (OpArg) 1,     &h,             &CPU::BIT_REG_8},
+        {"BIT 1, L",        8,  1,   (OpArg) 1,     &l,             &CPU::BIT_REG_8},
+        {"BIT 1, (HL)",     16, 1,   (OpArg) 1,     &hl,            &CPU::BIT_MEM},
+        {"BIT 1, A",        8,  1,   (OpArg) 1,     &a,             &CPU::BIT_REG_8},
+        // 0x50
+        {"BIT 2, B",        8,  1,   (OpArg) 2,     &b,             &CPU::BIT_REG_8},
+        {"BIT 2, C",        8,  1,   (OpArg) 2,     &c,             &CPU::BIT_REG_8},
+        {"BIT 2, D",        8,  1,   (OpArg) 2,     &d,             &CPU::BIT_REG_8},
+        {"BIT 2, E",        8,  1,   (OpArg) 2,     &e,             &CPU::BIT_REG_8},
+        {"BIT 2, H",        8,  1,   (OpArg) 2,     &h,             &CPU::BIT_REG_8},
+        {"BIT 2, L",        8,  1,   (OpArg) 2,     &l,             &CPU::BIT_REG_8},
+        {"BIT 2, (HL)",     16, 1,   (OpArg) 2,     &hl,            &CPU::BIT_MEM},
+        {"BIT 2, A",        8,  1,   (OpArg) 2,     &a,             &CPU::BIT_REG_8},
+        {"BIT 3, B",        8,  1,   (OpArg) 3,     &b,             &CPU::BIT_REG_8},
+        {"BIT 3, C",        8,  1,   (OpArg) 3,     &c,             &CPU::BIT_REG_8},
+        {"BIT 3, D",        8,  1,   (OpArg) 3,     &d,             &CPU::BIT_REG_8},
+        {"BIT 3, E",        8,  1,   (OpArg) 3,     &e,             &CPU::BIT_REG_8},
+        {"BIT 3, H",        8,  1,   (OpArg) 3,     &h,             &CPU::BIT_REG_8},
+        {"BIT 3, L",        8,  1,   (OpArg) 3,     &l,             &CPU::BIT_REG_8},
+        {"BIT 3, (HL)",     16, 1,   (OpArg) 3,     &hl,            &CPU::BIT_MEM},
+        {"BIT 3, A",        8,  1,   (OpArg) 3,     &a,             &CPU::BIT_REG_8},
+        // 0x60
+        {"BIT 4, B",        8,  1,   (OpArg) 4,     &b,             &CPU::BIT_REG_8},
+        {"BIT 4, C",        8,  1,   (OpArg) 4,     &c,             &CPU::BIT_REG_8},
+        {"BIT 4, D",        8,  1,   (OpArg) 4,     &d,             &CPU::BIT_REG_8},
+        {"BIT 4, E",        8,  1,   (OpArg) 4,     &e,             &CPU::BIT_REG_8},
+        {"BIT 4, H",        8,  1,   (OpArg) 4,     &h,             &CPU::BIT_REG_8},
+        {"BIT 4, L",        8,  1,   (OpArg) 4,     &l,             &CPU::BIT_REG_8},
+        {"BIT 4, (HL)",     16, 1,   (OpArg) 4,     &hl,            &CPU::BIT_MEM},
+        {"BIT 4, A",        8,  1,   (OpArg) 4,     &a,             &CPU::BIT_REG_8},
+        {"BIT 5, B",        8,  1,   (OpArg) 5,     &b,             &CPU::BIT_REG_8},
+        {"BIT 5, C",        8,  1,   (OpArg) 5,     &c,             &CPU::BIT_REG_8},
+        {"BIT 5, D",        8,  1,   (OpArg) 5,     &d,             &CPU::BIT_REG_8},
+        {"BIT 5, E",        8,  1,   (OpArg) 5,     &e,             &CPU::BIT_REG_8},
+        {"BIT 5, H",        8,  1,   (OpArg) 5,     &h,             &CPU::BIT_REG_8},
+        {"BIT 5, L",        8,  1,   (OpArg) 5,     &l,             &CPU::BIT_REG_8},
+        {"BIT 5, (HL)",     16, 1,   (OpArg) 5,     &hl,            &CPU::BIT_MEM},
+        {"BIT 5, A",        8,  1,   (OpArg) 5,     &a,             &CPU::BIT_REG_8},
+        // 0x70
+        {"BIT 6, B",        8,  1,   (OpArg) 6,     &b,             &CPU::BIT_REG_8},
+        {"BIT 6, C",        8,  1,   (OpArg) 6,     &c,             &CPU::BIT_REG_8},
+        {"BIT 6, D",        8,  1,   (OpArg) 6,     &d,             &CPU::BIT_REG_8},
+        {"BIT 6, E",        8,  1,   (OpArg) 6,     &e,             &CPU::BIT_REG_8},
+        {"BIT 6, H",        8,  1,   (OpArg) 6,     &h,             &CPU::BIT_REG_8},
+        {"BIT 6, L",        8,  1,   (OpArg) 6,     &l,             &CPU::BIT_REG_8},
+        {"BIT 6, (HL)",     16, 1,   (OpArg) 6,     &hl,            &CPU::BIT_MEM},
+        {"BIT 6, A",        8,  1,   (OpArg) 6,     &a,             &CPU::BIT_REG_8},
+        {"BIT 7, B",        8,  1,   (OpArg) 7,     &b,             &CPU::BIT_REG_8},
+        {"BIT 7, C",        8,  1,   (OpArg) 7,     &c,             &CPU::BIT_REG_8},
+        {"BIT 7, D",        8,  1,   (OpArg) 7,     &d,             &CPU::BIT_REG_8},
+        {"BIT 7, E",        8,  1,   (OpArg) 7,     &e,             &CPU::BIT_REG_8},
+        {"BIT 7, H",        8,  1,   (OpArg) 7,     &h,             &CPU::BIT_REG_8},
+        {"BIT 7, L",        8,  1,   (OpArg) 7,     &l,             &CPU::BIT_REG_8},
+        {"BIT 7, (HL)",     16, 1,   (OpArg) 7,     &hl,            &CPU::BIT_MEM},
+        {"BIT 7, A",        8,  1,   (OpArg) 7,     &a,             &CPU::BIT_REG_8},
+        // 0x80
+        {"RES 0, B",        8,  1,   0,             &b,             &CPU::RES_REG_8},
+        {"RES 0, C",        8,  1,   0,             &c,             &CPU::RES_REG_8},
+        {"RES 0, D",        8,  1,   0,             &d,             &CPU::RES_REG_8},
+        {"RES 0, E",        8,  1,   0,             &e,             &CPU::RES_REG_8},
+        {"RES 0, H",        8,  1,   0,             &h,             &CPU::RES_REG_8},
+        {"RES 0, L",        8,  1,   0,             &l,             &CPU::RES_REG_8},
+        {"RES 0, (HL)",     16, 1,   0,             &hl,            &CPU::RES_MEM},
+        {"RES 0, A",        8,  1,   0,             &a,             &CPU::RES_REG_8},
+        {"RES 1, B",        8,  1,   (OpArg) 1,     &b,             &CPU::RES_REG_8},
+        {"RES 1, C",        8,  1,   (OpArg) 1,     &c,             &CPU::RES_REG_8},
+        {"RES 1, D",        8,  1,   (OpArg) 1,     &d,             &CPU::RES_REG_8},
+        {"RES 1, E",        8,  1,   (OpArg) 1,     &e,             &CPU::RES_REG_8},
+        {"RES 1, H",        8,  1,   (OpArg) 1,     &h,             &CPU::RES_REG_8},
+        {"RES 1, L",        8,  1,   (OpArg) 1,     &l,             &CPU::RES_REG_8},
+        {"RES 1, (HL)",     16, 1,   (OpArg) 1,     &hl,            &CPU::RES_MEM},
+        {"RES 1, A",        8,  1,   (OpArg) 1,     &a,             &CPU::RES_REG_8},
+        // 0x90
+        {"RES 2, B",        8,  1,   (OpArg) 2,     &b,             &CPU::RES_REG_8},
+        {"RES 2, C",        8,  1,   (OpArg) 2,     &c,             &CPU::RES_REG_8},
+        {"RES 2, D",        8,  1,   (OpArg) 2,     &d,             &CPU::RES_REG_8},
+        {"RES 2, E",        8,  1,   (OpArg) 2,     &e,             &CPU::RES_REG_8},
+        {"RES 2, H",        8,  1,   (OpArg) 2,     &h,             &CPU::RES_REG_8},
+        {"RES 2, L",        8,  1,   (OpArg) 2,     &l,             &CPU::RES_REG_8},
+        {"RES 2, (HL)",     16, 1,   (OpArg) 2,     &hl,            &CPU::RES_MEM},
+        {"RES 2, A",        8,  1,   (OpArg) 2,     &a,             &CPU::RES_REG_8},
+        {"RES 3, B",        8,  1,   (OpArg) 3,     &b,             &CPU::RES_REG_8},
+        {"RES 3, C",        8,  1,   (OpArg) 3,     &c,             &CPU::RES_REG_8},
+        {"RES 3, D",        8,  1,   (OpArg) 3,     &d,             &CPU::RES_REG_8},
+        {"RES 3, E",        8,  1,   (OpArg) 3,     &e,             &CPU::RES_REG_8},
+        {"RES 3, H",        8,  1,   (OpArg) 3,     &h,             &CPU::RES_REG_8},
+        {"RES 3, L",        8,  1,   (OpArg) 3,     &l,             &CPU::RES_REG_8},
+        {"RES 3, (HL)",     16, 1,   (OpArg) 3,     &hl,            &CPU::RES_MEM},
+        {"RES 3, A",        8,  1,   (OpArg) 3,     &a,             &CPU::RES_REG_8},
+        // 0xA0
+        {"RES 4, B",        8,  1,   (OpArg) 4,     &b,             &CPU::RES_REG_8},
+        {"RES 4, C",        8,  1,   (OpArg) 4,     &c,             &CPU::RES_REG_8},
+        {"RES 4, D",        8,  1,   (OpArg) 4,     &d,             &CPU::RES_REG_8},
+        {"RES 4, E",        8,  1,   (OpArg) 4,     &e,             &CPU::RES_REG_8},
+        {"RES 4, H",        8,  1,   (OpArg) 4,     &h,             &CPU::RES_REG_8},
+        {"RES 4, L",        8,  1,   (OpArg) 4,     &l,             &CPU::RES_REG_8},
+        {"RES 4, (HL)",     16, 1,   (OpArg) 4,     &hl,            &CPU::RES_MEM},
+        {"RES 4, A",        8,  1,   (OpArg) 4,     &a,             &CPU::RES_REG_8},
+        {"RES 5, B",        8,  1,   (OpArg) 5,     &b,             &CPU::RES_REG_8},
+        {"RES 5, C",        8,  1,   (OpArg) 5,     &c,             &CPU::RES_REG_8},
+        {"RES 5, D",        8,  1,   (OpArg) 5,     &d,             &CPU::RES_REG_8},
+        {"RES 5, E",        8,  1,   (OpArg) 5,     &e,             &CPU::RES_REG_8},
+        {"RES 5, H",        8,  1,   (OpArg) 5,     &h,             &CPU::RES_REG_8},
+        {"RES 5, L",        8,  1,   (OpArg) 5,     &l,             &CPU::RES_REG_8},
+        {"RES 5, (HL)",     16, 1,   (OpArg) 5,     &hl,            &CPU::RES_MEM},
+        {"RES 5, A",        8,  1,   (OpArg) 5,     &a,             &CPU::RES_REG_8},
+        // 0xB0
+        {"RES 6, B",        8,  1,   (OpArg) 6,     &b,             &CPU::RES_REG_8},
+        {"RES 6, C",        8,  1,   (OpArg) 6,     &c,             &CPU::RES_REG_8},
+        {"RES 6, D",        8,  1,   (OpArg) 6,     &d,             &CPU::RES_REG_8},
+        {"RES 6, E",        8,  1,   (OpArg) 6,     &e,             &CPU::RES_REG_8},
+        {"RES 6, H",        8,  1,   (OpArg) 6,     &h,             &CPU::RES_REG_8},
+        {"RES 6, L",        8,  1,   (OpArg) 6,     &l,             &CPU::RES_REG_8},
+        {"RES 6, (HL)",     16, 1,   (OpArg) 6,     &hl,            &CPU::RES_MEM},
+        {"RES 6, A",        8,  1,   (OpArg) 6,     &a,             &CPU::RES_REG_8},
+        {"RES 7, B",        8,  1,   (OpArg) 7,     &b,             &CPU::RES_REG_8},
+        {"RES 7, C",        8,  1,   (OpArg) 7,     &c,             &CPU::RES_REG_8},
+        {"RES 7, D",        8,  1,   (OpArg) 7,     &d,             &CPU::RES_REG_8},
+        {"RES 7, E",        8,  1,   (OpArg) 7,     &e,             &CPU::RES_REG_8},
+        {"RES 7, H",        8,  1,   (OpArg) 7,     &h,             &CPU::RES_REG_8},
+        {"RES 7, L",        8,  1,   (OpArg) 7,     &l,             &CPU::RES_REG_8},
+        {"RES 7, (HL)",     16, 1,   (OpArg) 7,     &hl,            &CPU::RES_MEM},
+        {"RES 7, A",        8,  1,   (OpArg) 7,     &a,             &CPU::RES_REG_8},
+        // 0xC0
+        {"SET 0, B",        8,  1,   0,             &b,             &CPU::SET_REG_8},
+        {"SET 0, C",        8,  1,   0,             &c,             &CPU::SET_REG_8},
+        {"SET 0, D",        8,  1,   0,             &d,             &CPU::SET_REG_8},
+        {"SET 0, E",        8,  1,   0,             &e,             &CPU::SET_REG_8},
+        {"SET 0, H",        8,  1,   0,             &h,             &CPU::SET_REG_8},
+        {"SET 0, L",        8,  1,   0,             &l,             &CPU::SET_REG_8},
+        {"SET 0, (HL)",     16, 1,   0,             &hl,            &CPU::SET_MEM},
+        {"SET 0, A",        8,  1,   0,             &a,             &CPU::SET_REG_8},
+        {"SET 1, B",        8,  1,   (OpArg) 1,     &b,             &CPU::SET_REG_8},
+        {"SET 1, C",        8,  1,   (OpArg) 1,     &c,             &CPU::SET_REG_8},
+        {"SET 1, D",        8,  1,   (OpArg) 1,     &d,             &CPU::SET_REG_8},
+        {"SET 1, E",        8,  1,   (OpArg) 1,     &e,             &CPU::SET_REG_8},
+        {"SET 1, H",        8,  1,   (OpArg) 1,     &h,             &CPU::SET_REG_8},
+        {"SET 1, L",        8,  1,   (OpArg) 1,     &l,             &CPU::SET_REG_8},
+        {"SET 1, (HL)",     16, 1,   (OpArg) 1,     &hl,            &CPU::SET_MEM},
+        {"SET 1, A",        8,  1,   (OpArg) 1,     &a,             &CPU::SET_REG_8},
+        // 0xD0
+        {"SET 2, B",        8,  1,   (OpArg) 2,     &b,             &CPU::SET_REG_8},
+        {"SET 2, C",        8,  1,   (OpArg) 2,     &c,             &CPU::SET_REG_8},
+        {"SET 2, D",        8,  1,   (OpArg) 2,     &d,             &CPU::SET_REG_8},
+        {"SET 2, E",        8,  1,   (OpArg) 2,     &e,             &CPU::SET_REG_8},
+        {"SET 2, H",        8,  1,   (OpArg) 2,     &h,             &CPU::SET_REG_8},
+        {"SET 2, L",        8,  1,   (OpArg) 2,     &l,             &CPU::SET_REG_8},
+        {"SET 2, (HL)",     16, 1,   (OpArg) 2,     &hl,            &CPU::SET_MEM},
+        {"SET 2, A",        8,  1,   (OpArg) 2,     &a,             &CPU::SET_REG_8},
+        {"SET 3, B",        8,  1,   (OpArg) 3,     &b,             &CPU::SET_REG_8},
+        {"SET 3, C",        8,  1,   (OpArg) 3,     &c,             &CPU::SET_REG_8},
+        {"SET 3, D",        8,  1,   (OpArg) 3,     &d,             &CPU::SET_REG_8},
+        {"SET 3, E",        8,  1,   (OpArg) 3,     &e,             &CPU::SET_REG_8},
+        {"SET 3, H",        8,  1,   (OpArg) 3,     &h,             &CPU::SET_REG_8},
+        {"SET 3, L",        8,  1,   (OpArg) 3,     &l,             &CPU::SET_REG_8},
+        {"SET 3, (HL)",     16, 1,   (OpArg) 3,     &hl,            &CPU::SET_MEM},
+        {"SET 3, A",        8,  1,   (OpArg) 3,     &a,             &CPU::SET_REG_8},
+        // 0xE0
+        {"SET 4, B",        8,  1,   (OpArg) 4,     &b,             &CPU::SET_REG_8},
+        {"SET 4, C",        8,  1,   (OpArg) 4,     &c,             &CPU::SET_REG_8},
+        {"SET 4, D",        8,  1,   (OpArg) 4,     &d,             &CPU::SET_REG_8},
+        {"SET 4, E",        8,  1,   (OpArg) 4,     &e,             &CPU::SET_REG_8},
+        {"SET 4, H",        8,  1,   (OpArg) 4,     &h,             &CPU::SET_REG_8},
+        {"SET 4, L",        8,  1,   (OpArg) 4,     &l,             &CPU::SET_REG_8},
+        {"SET 4, (HL)",     16, 1,   (OpArg) 4,     &hl,            &CPU::SET_MEM},
+        {"SET 4, A",        8,  1,   (OpArg) 4,     &a,             &CPU::SET_REG_8},
+        {"SET 5, B",        8,  1,   (OpArg) 5,     &b,             &CPU::SET_REG_8},
+        {"SET 5, C",        8,  1,   (OpArg) 5,     &c,             &CPU::SET_REG_8},
+        {"SET 5, D",        8,  1,   (OpArg) 5,     &d,             &CPU::SET_REG_8},
+        {"SET 5, E",        8,  1,   (OpArg) 5,     &e,             &CPU::SET_REG_8},
+        {"SET 5, H",        8,  1,   (OpArg) 5,     &h,             &CPU::SET_REG_8},
+        {"SET 5, L",        8,  1,   (OpArg) 5,     &l,             &CPU::SET_REG_8},
+        {"SET 5, (HL)",     16, 1,   (OpArg) 5,     &hl,            &CPU::SET_MEM},
+        {"SET 5, A",        8,  1,   (OpArg) 5,     &a,             &CPU::SET_REG_8},
+        // 0xF0
+        {"SET 6, B",        8,  1,   (OpArg) 6,     &b,             &CPU::SET_REG_8},
+        {"SET 6, C",        8,  1,   (OpArg) 6,     &c,             &CPU::SET_REG_8},
+        {"SET 6, D",        8,  1,   (OpArg) 6,     &d,             &CPU::SET_REG_8},
+        {"SET 6, E",        8,  1,   (OpArg) 6,     &e,             &CPU::SET_REG_8},
+        {"SET 6, H",        8,  1,   (OpArg) 6,     &h,             &CPU::SET_REG_8},
+        {"SET 6, L",        8,  1,   (OpArg) 6,     &l,             &CPU::SET_REG_8},
+        {"SET 6, (HL)",     16, 1,   (OpArg) 6,     &hl,            &CPU::SET_MEM},
+        {"SET 6, A",        8,  1,   (OpArg) 6,     &a,             &CPU::SET_REG_8},
+        {"SET 7, B",        8,  1,   (OpArg) 7,     &b,             &CPU::SET_REG_8},
+        {"SET 7, C",        8,  1,   (OpArg) 7,     &c,             &CPU::SET_REG_8},
+        {"SET 7, D",        8,  1,   (OpArg) 7,     &d,             &CPU::SET_REG_8},
+        {"SET 7, E",        8,  1,   (OpArg) 7,     &e,             &CPU::SET_REG_8},
+        {"SET 7, H",        8,  1,   (OpArg) 7,     &h,             &CPU::SET_REG_8},
+        {"SET 7, L",        8,  1,   (OpArg) 7,     &l,             &CPU::SET_REG_8},
+        {"SET 7, (HL)",     16, 1,   (OpArg) 7,     &hl,            &CPU::SET_MEM},
+        {"SET 7, A",        8,  1,   (OpArg) 7,     &a,             &CPU::SET_REG_8},
     };
 }
 
@@ -336,6 +610,11 @@ void CPU::clock() {
         }
         if (instr.data_len == 2) {
             fetched |= read(pc + 2) << 8;
+        }
+
+        // Handle PREFIX CB opcodes
+        if (opcode == 0xCB) {
+            instr = lookup_cb[fetched];
         }
 
 #ifdef LOGFILE
@@ -471,10 +750,6 @@ bool CPU::handleInterrupt() {
 // Many of these use arg1 and arg2 in different ways or not at all (eg. NOP)
 // Most commonly arg1 and arg2 will be the memory address of a register or immediate value (fetched)
 
-uint8_t CPU::PREFIX_CB() {
-    return 0;
-}
-
 uint8_t CPU::UNKNOWN() {
     throw std::invalid_argument("Invalid Opcode.");
 }
@@ -493,11 +768,6 @@ uint8_t CPU::HALT() {
     return 0;
 }
 
-// TODO: Implement -- this one is pretty nasty. need to implement N and C flags for this
-uint8_t CPU::DA() {
-    return 0;
-}
-
 uint8_t CPU::EI() {
     ime = true;
     return 0;
@@ -505,6 +775,36 @@ uint8_t CPU::EI() {
 
 uint8_t CPU::DI() {
     ime = false;
+    return 0;
+}
+
+uint8_t CPU::DAA() {
+    uint8_t val = DR_8(arg1);
+    bool carry = false;
+
+    if (!getFlag(N)) {
+        if (getFlag(C) || val > 0x99) {
+            val += 0x60;
+            carry = true;
+        }
+        if (getFlag(H) || (val & 0x0F) > 0x09) {
+            val += 0x06;
+        }
+    } else {
+        if (getFlag(C)) {
+            val -= 0x60;
+            carry = true;
+        }
+        if (getFlag(H)) {
+            val -= 0x06;
+        }
+    }
+
+    DR_8(arg1) = val;
+
+    setFlag(Z, val == 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
     return 0;
 }
 
@@ -660,7 +960,7 @@ uint8_t CPU::LDD_REG_8_MEM() {
 
 // For ADD instructions, arg1 is the destination, arg2 is the source value
 uint8_t CPU::ADD_REG_16_VAL_16() {
-    bool half_carry = (DR_16(arg1) & 0x0F) + (DR_16(arg2) & 0x0F) > 0x0F;
+    bool half_carry = (DR_16(arg1) & 0x0FFF) + (DR_16(arg2) & 0x0FFF) > 0x0FFF;
     uint32_t sum = DR_16(arg1) + DR_16(arg2);
     DR_16(arg1) = (uint16_t) sum;
 
@@ -673,19 +973,19 @@ uint8_t CPU::ADD_REG_16_VAL_16() {
 // For this instruction, arg2 is a signed value
 uint8_t CPU::ADD_REG_16_VAL_8() {
     bool carry, half_carry;
-    uint8_t val = DR_8(arg2) & 0x7F;
+    int8_t val = *(int8_t *) arg2;
+    uint16_t sum = DR_16(arg1) + val;
 
     // check sign
-    if (DR_8(arg2) >> 7) {
-        carry = DR_16(arg1) < val;
-        half_carry = (DR_16(arg1) & 0x0F) < (val & 0x0F);
-        DR_16(arg1) -= val;
-    } else {
+    if (val >= 0) {
+        carry = (DR_16(arg1) & 0xFF) + val > 0xFF;
         half_carry = (DR_16(arg1) & 0x0F) + (val & 0x0F) > 0x0F;
-        uint32_t sum = DR_16(arg1) + val;
-        carry = sum >= 1 << 16;
-        DR_16(arg1) = (uint16_t) sum;
+    } else {
+        carry = (sum & 0xFF) <= (DR_16(arg1) & 0xFF);
+        half_carry = (sum & 0x0F) <= (DR_16(arg1) & 0x0F);
     }
+
+    DR_16(arg1) = sum;
 
     setFlag(Z, 0);
     setFlag(N, 0);
@@ -720,7 +1020,7 @@ uint8_t CPU::ADD_REG_8_MEM () {
 }
 
 uint8_t CPU::ADC_REG_8_VAL_8() {
-    uint8_t c = (f & C) >> 4;
+    uint8_t c = getFlag(C);
     bool half_carry = (DR_8(arg1) & 0x0F) + (DR_8(arg2) & 0x0F) + c > 0x0F;
     uint16_t sum = DR_8(arg1) + DR_8(arg2) + c;
     DR_8(arg1) = (uint8_t) sum;
@@ -733,7 +1033,7 @@ uint8_t CPU::ADC_REG_8_VAL_8() {
 }
 
 uint8_t CPU::ADC_REG_8_MEM() {
-    uint8_t c = (f & C) >> 4;
+    uint8_t c = getFlag(C);
     uint8_t val = read(DR_16(arg2));
     bool half_carry = (DR_8(arg1) & 0x0F) + (val & 0x0F) + c > 0x0F;
     uint16_t sum = DR_8(arg1) + val + c;
@@ -775,10 +1075,10 @@ uint8_t CPU::SUB_REG_8_MEM() {
 }
 
 uint8_t CPU::SBC_REG_8_VAL_8() {
-    uint8_t c = (f & C) >> 4;
+    uint8_t c = getFlag(C);
     uint8_t val1 = DR_8(arg1);
     uint8_t val2 = DR_8(arg2);
-    bool half_carry = (val1 & 0x0F) < (val2 & 0x0F + c);
+    bool half_carry = (val1 & 0x0F) < ((val2 & 0x0F) + c);
     DR_8(arg1) = val1 - (val2 + c);
 
     setFlag(Z, DR_8(arg1) == 0);
@@ -789,10 +1089,10 @@ uint8_t CPU::SBC_REG_8_VAL_8() {
 }
 
 uint8_t CPU::SBC_REG_8_MEM() {
-    uint8_t c = (f & C) >> 4;
+    uint8_t c = getFlag(C);
     uint8_t val1 = DR_8(arg1);
     uint8_t val2 = read(DR_16(arg2));
-    bool half_carry = (val1 & 0x0F) < (val2 & 0x0F + c);
+    bool half_carry = (val1 & 0x0F) < ((val2 & 0x0F) + c);
     DR_8(arg1) = val1 - (val2 + c);
 
     setFlag(Z, DR_8(arg1) == 0);
@@ -807,7 +1107,7 @@ uint8_t CPU::AND_REG_8_VAL_8(){
     DR_8(arg1) &= DR_8(arg2);
 
     setFlag(Z, DR_8(arg1) == 0);
-    setFlag(N, 1);
+    setFlag(N, 0);
     setFlag(H, 1);
     setFlag(C, 0);
     return 0;
@@ -868,7 +1168,7 @@ uint8_t CPU::CP_REG_8_VAL_8() {
     uint8_t val2 = DR_8(arg2);
     bool half_carry = (val1 & 0x0F) < (val2 & 0x0F);
 
-    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(Z, val1 == val2);
     setFlag(N, 1);
     setFlag(H, half_carry);
     setFlag(C, val1 < val2);
@@ -880,7 +1180,7 @@ uint8_t CPU::CP_REG_8_MEM() {
     uint8_t val2 = read(DR_16(arg2));
     bool half_carry = (val1 & 0x0F) < (val2 & 0x0F);
 
-    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(Z, val1 == val2);
     setFlag(N, 1);
     setFlag(H, half_carry);
     setFlag(C, val1 < val2);
@@ -950,7 +1250,7 @@ uint8_t CPU::RLCA() {
 uint8_t CPU::RRCA() {
     uint8_t carry = DR_8(arg1) & 0x01;
     DR_8(arg1) >>= 1;
-    DR_8(arg1) |= carry;
+    DR_8(arg1) |= (carry << 7);
 
     setFlag(Z, 0);
     setFlag(N, 0);
@@ -978,11 +1278,6 @@ uint8_t CPU::JP() {
     return 0;
 }
 
-uint8_t CPU::JP_MEM() {
-    pc = read(DR_16(arg1));
-    return 0;
-}
-
 // arg1 is the register we're pushing to the stack
 uint8_t CPU::PUSH() {
     sp -= 2;
@@ -997,6 +1292,9 @@ uint8_t CPU::POP() {
     DR_16(arg1) = read(sp);
     DR_16(arg1) |= read(sp + 1) << 8;
     sp += 2;
+
+    // Just in case we popped to AF
+    f &= 0xF0;
 
     return 0;
 }
@@ -1036,5 +1334,233 @@ uint8_t CPU::RST() {
     fetched = (uint16_t) (uint64_t) arg2;
     arg2 = &fetched;
     CALL();
+    return 0;
+}
+
+
+// PREFIX CB OPCODE IMPLEMENTATIONS
+
+// same as RLCA but sets Z flag
+uint8_t CPU::RLC_REG_8() {
+    RLCA();
+    setFlag(Z, DR_8(arg1) == 0);
+    return 0;
+}
+
+uint8_t CPU::RLC_MEM() {
+    uint8_t val = read(DR_16(arg1));
+    uint8_t carry = val >> 7;
+    val <<= 1;
+    val |= carry;
+    write(DR_16(arg1), val);
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+
+uint8_t CPU::RRC_REG_8() {
+    RRCA();
+    setFlag(Z, DR_8(arg1) == 0);
+    return 0;
+}
+
+uint8_t CPU::RRC_MEM() {
+    uint8_t val = read(DR_16(arg1));
+    uint8_t carry = val & 0x01;
+    val >>= 1;
+    val |= (carry << 7);
+    write(DR_16(arg1), val);
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+
+uint8_t CPU::RL_REG_8() {
+    RLA();
+    setFlag(Z, DR_8(arg1) == 0);
+    return 0;
+}
+
+uint8_t CPU::RL_MEM() {
+    uint8_t val = read(DR_16(arg1));
+    uint8_t carry = val >> 7;
+    val <<= 1;
+    val |= getFlag(C);
+    write(DR_16(arg1), val);
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+
+uint8_t CPU::RR_REG_8() {
+    RRA();
+    setFlag(Z, DR_8(arg1) == 0);
+    return 0;
+}
+
+uint8_t CPU::RR_MEM() {
+    uint8_t val = read(DR_16(arg1));
+    uint8_t carry = val & 0x01;
+    val >>= 1;
+    val |= getFlag(C) << 7;
+    write(DR_16(arg1), val);
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+
+uint8_t CPU::SLA_REG_8() {
+    uint8_t carry = DR_8(arg1) >> 7;
+    DR_8(arg1) <<= 1;
+
+    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+uint8_t CPU::SLA_MEM() {
+    uint8_t val = read(DR_16(arg1));
+    uint8_t carry = val >> 7;
+    val <<= 1;
+    write(DR_16(arg1), val);
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+
+uint8_t CPU::SRA_REG_8() {
+    uint8_t carry = DR_8(arg1) & 0x01;
+    DR_8(arg1) >>= 1;
+    DR_8(arg1) |= (DR_8(arg1) & 0x40) << 1;
+
+    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+uint8_t CPU::SRA_MEM() {
+    uint8_t val = read(DR_16(arg1));
+    uint8_t carry = DR_8(arg1) & 0x01;
+    val >>= 1;
+    val |= (val & 0x40) << 1;
+    write(DR_16(arg1), val);
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+
+uint8_t CPU::SWAP_REG_8() {
+    uint8_t val = DR_8(arg1);
+    DR_8(arg1) = (val << 4) | (val >> 4);
+    
+    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, val & 0x01);
+    return 0;
+}
+
+uint8_t CPU::SWAP_MEM() {
+    uint8_t val = read(DR_16(arg1));
+    val = (val << 4) | (val >> 4);
+    write(DR_16(arg1), val);
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, val & 0x01);
+    return 0;
+}
+
+uint8_t CPU::SRL_REG_8() {
+    uint8_t carry = DR_8(arg1) & 0x01;
+    DR_8(arg1) >>= 1;
+
+    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+
+uint8_t CPU::SRL_MEM() {
+    uint8_t val = read(DR_16(arg1));
+    uint8_t carry = DR_8(arg1) & 0x01;
+    val >>= 1;
+    write(DR_16(arg1), val);
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 0);
+    setFlag(C, carry);
+    return 0;
+}
+
+uint8_t CPU::BIT_REG_8() {
+    uint8_t shift = (uint64_t) arg1;
+    uint8_t val = (DR_8(arg2) >> shift) & 0x01;
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 1);
+    return 0;
+}
+uint8_t CPU::BIT_MEM() {
+    uint8_t shift = (uint64_t) arg1;
+    uint8_t val = (read(DR_16(arg2)) >> shift) & 0x01;
+
+    setFlag(Z, val == 0);
+    setFlag(N, 0);
+    setFlag(H, 1);
+    return 0;
+}
+
+uint8_t CPU::RES_REG_8() {
+    uint8_t bit = (uint64_t) arg1;
+    DR_8(arg2) &= ~(1 << bit);
+
+    return 0;
+}
+
+uint8_t CPU::RES_MEM() {
+    uint8_t bit = (uint64_t) arg1;
+    uint8_t val = read(DR_16(arg2)) & ~(1 << bit);
+    write(DR_16(arg2), val);
+
+    return 0;
+}
+
+uint8_t CPU::SET_REG_8() {
+    uint8_t bit = (uint64_t) arg1;
+    DR_8(arg2) |= (1 << bit);
+
+    return 0;
+}
+
+uint8_t CPU::SET_MEM() {
+    uint8_t bit = (uint64_t) arg1;
+    uint8_t val = read(DR_16(arg2)) | (1 << bit);
+    write(DR_16(arg2), val);
+
     return 0;
 }

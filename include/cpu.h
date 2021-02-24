@@ -97,7 +97,6 @@ private:
 
 private:
     // Opcode implementations
-    uint8_t PREFIX_CB();
     uint8_t UNKNOWN();
 
     uint8_t NOP();
@@ -107,7 +106,7 @@ private:
     uint8_t EI();
     uint8_t DI();
 
-    uint8_t DA();
+    uint8_t DAA();
 
     uint8_t LD_REG_16_VAL_16();
     uint8_t LD_REG_8_VAL_8();
@@ -166,7 +165,6 @@ private:
 
     uint8_t JR();
     uint8_t JP();
-    uint8_t JP_MEM();
 
     uint8_t PUSH();
     uint8_t POP();
@@ -176,4 +174,38 @@ private:
     uint8_t RETI();
 
     uint8_t RST();
+
+    // Prefix CB opcodes
+    uint8_t RLC_REG_8();
+    uint8_t RLC_MEM();
+
+    uint8_t RRC_REG_8();
+    uint8_t RRC_MEM();
+
+    uint8_t RL_REG_8();
+    uint8_t RL_MEM();
+
+    uint8_t RR_REG_8();
+    uint8_t RR_MEM();
+
+    uint8_t SLA_REG_8();
+    uint8_t SLA_MEM();
+
+    uint8_t SRA_REG_8();
+    uint8_t SRA_MEM();
+
+    uint8_t SWAP_REG_8();
+    uint8_t SWAP_MEM();
+
+    uint8_t SRL_REG_8();
+    uint8_t SRL_MEM();
+
+    uint8_t BIT_REG_8();
+    uint8_t BIT_MEM();
+
+    uint8_t RES_REG_8();
+    uint8_t RES_MEM();
+
+    uint8_t SET_REG_8();
+    uint8_t SET_MEM();
 };
