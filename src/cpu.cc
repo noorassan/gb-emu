@@ -891,7 +891,7 @@ uint8_t CPU::INC_MEM() {
     bool half_carry = (val & 0x0F) == 0x0F;
     write(DR_16(arg1), val + 1);
 
-    setFlag(Z, val == 0);
+    setFlag(Z, val == 0xFF);
     setFlag(N, 0);
     setFlag(H, half_carry);
     return 0;
@@ -917,7 +917,7 @@ uint8_t CPU::DEC_MEM() {
     bool half_carry = (val & 0x0F) == 0x00;
     write(DR_16(arg1), val - 1);
 
-    setFlag(Z, val == 0);
+    setFlag(Z, val == 1);
     setFlag(N, 1);
     setFlag(H, half_carry); // set if borrow from bit 4
     return 0;
@@ -1114,7 +1114,7 @@ uint8_t CPU::AND_REG_8_VAL_8(){
 }
 
 uint8_t CPU::AND_REG_8_MEM() {
-    DR_8(arg1) &= read(DR_8(arg2));
+    DR_8(arg1) &= read(DR_16(arg2));
 
     setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 0);
@@ -1198,12 +1198,16 @@ uint8_t CPU::CPL() {
 
 // SCF sets carry flag. This method takes register as arg1 and flag as arg2 by convention
 uint8_t CPU::SCF() {
+    setFlag(N, 0);
+    setFlag(H, 0);
     setFlag(C, 1);
     return 0;
 }
 
 // CCF complements carry flag. Takes reg as arg1 and flag as arg2 by convention
 uint8_t CPU::CCF() {
+    setFlag(N, 0);
+    setFlag(H, 0);
     setFlag(C, !getFlag(C));
     return 0;
 }
@@ -1457,7 +1461,7 @@ uint8_t CPU::SRA_REG_8() {
 }
 uint8_t CPU::SRA_MEM() {
     uint8_t val = read(DR_16(arg1));
-    uint8_t carry = DR_8(arg1) & 0x01;
+    uint8_t carry = val & 0x01;
     val >>= 1;
     val |= (val & 0x40) << 1;
     write(DR_16(arg1), val);
@@ -1476,7 +1480,7 @@ uint8_t CPU::SWAP_REG_8() {
     setFlag(Z, DR_8(arg1) == 0);
     setFlag(N, 0);
     setFlag(H, 0);
-    setFlag(C, val & 0x01);
+    setFlag(C, 0);
     return 0;
 }
 
@@ -1488,7 +1492,7 @@ uint8_t CPU::SWAP_MEM() {
     setFlag(Z, val == 0);
     setFlag(N, 0);
     setFlag(H, 0);
-    setFlag(C, val & 0x01);
+    setFlag(C, 0);
     return 0;
 }
 
@@ -1505,7 +1509,7 @@ uint8_t CPU::SRL_REG_8() {
 
 uint8_t CPU::SRL_MEM() {
     uint8_t val = read(DR_16(arg1));
-    uint8_t carry = DR_8(arg1) & 0x01;
+    uint8_t carry = val & 0x01;
     val >>= 1;
     write(DR_16(arg1), val);
 
