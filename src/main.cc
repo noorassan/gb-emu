@@ -4,12 +4,13 @@
 
 #include "bus.h"
 
-int main() {
+
+int main(int argc, char **argv) {
     Bus bus;
     //std::chrono::high_resolution_clock::time_point t1, t2;
     //std::chrono::duration<float, std::milli> time_span;
     
-    std::shared_ptr<Cartridge> cart = std::make_shared<Cartridge>("test_roms/09-op-r,r.gb");
+    std::shared_ptr<Cartridge> cart = std::make_shared<Cartridge>(argv[1]);
     bus.insertCartridge(cart);
     bus.reset(); 
 
