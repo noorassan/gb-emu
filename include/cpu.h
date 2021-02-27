@@ -6,7 +6,7 @@
 
 #include "interrupt.h"
 
-#define LOGFILE "log.txt"
+//#define LOGFILE "log.txt"
 
 #ifdef LOGFILE
 #include <fstream>

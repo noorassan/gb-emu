@@ -640,38 +640,20 @@ void CPU::clock() {
 
 #ifdef LOGFILE
 void CPU::print_log(uint8_t opcode, INSTRUCTION instr) {
-    //file << std::hex << std::showbase;
-    //file << "Opcode: " << unsigned(opcode) << std::endl;
-    //file << "Instruction: " << instr.name << ", " <<
-    //        "Fetched: " << unsigned(fetched) << std::endl;
-    //file << "REGISTER STATES PRIOR TO EXECUTION: " << std::endl <<
-    //        "a: " << unsigned(a) << ", " << "f: " << unsigned(f) << std::endl <<
-    //        "b: " << unsigned(b) << ", " << "c: " << unsigned(c) << std::endl <<
-    //        "d: " << unsigned(d) << ", " << "e: " << unsigned(e) << std::endl <<
-    //        "h: " << unsigned(h) << ", " << "l: " << unsigned(l) << std::endl <<
-    //        "sp: " << unsigned(sp) << std::endl <<
-    //        "pc: " << unsigned(pc) << std::endl;
-    //file << "FLAGS: Z N H C" << std::endl << "       ";
-    //file << std::dec << std::noshowbase;
-    //file << getFlag(Z) << " " << getFlag(N) << " " << getFlag(H) <<  " " << getFlag(C) << std::endl;
-    //file << std::endl;
-    file << std::hex << std::uppercase;
-    file << "A: " << std::setfill('0') << std::setw(2) << unsigned(a) << " "; 
-    file << "F: " << std::setfill('0') << std::setw(2) << unsigned(f) << " ";
-    file << "B: " << std::setfill('0') << std::setw(2) << unsigned(b) << " ";
-    file << "C: " << std::setfill('0') << std::setw(2) << unsigned(c) << " ";
-    file << "D: " << std::setfill('0') << std::setw(2) << unsigned(d) << " ";
-    file << "E: " << std::setfill('0') << std::setw(2) << unsigned(e) << " ";
-    file << "H: " << std::setfill('0') << std::setw(2) << unsigned(h) << " ";
-    file << "L: " << std::setfill('0') << std::setw(2) << unsigned(l) << " ";
-    file << "SP: " << std::setfill('0') << std::setw(4) << unsigned(sp) << " ";
-    file << "PC: " << "00:" << std::setfill('0') << std::setw(4) << unsigned(pc) << " ";
-    file << "(";
-    file << std::setfill('0') << std::setw(2) << unsigned(read(pc));
-    file << " " << std::setfill('0') << std::setw(2) << unsigned(read(pc+1));
-    file << " " << std::setfill('0') << std::setw(2) << unsigned(read(pc+2));
-    file << " " << std::setfill('0') << std::setw(2) << unsigned(read(pc+3));
-    file << ")";
+    file << std::hex << std::showbase;
+    file << "Opcode: " << unsigned(opcode) << std::endl;
+    file << "Instruction: " << instr.name << ", " <<
+            "Fetched: " << unsigned(fetched) << std::endl;
+    file << "REGISTER STATES PRIOR TO EXECUTION: " << std::endl <<
+            "a: " << unsigned(a) << ", " << "f: " << unsigned(f) << std::endl <<
+            "b: " << unsigned(b) << ", " << "c: " << unsigned(c) << std::endl <<
+            "d: " << unsigned(d) << ", " << "e: " << unsigned(e) << std::endl <<
+            "h: " << unsigned(h) << ", " << "l: " << unsigned(l) << std::endl <<
+            "sp: " << unsigned(sp) << std::endl <<
+            "pc: " << unsigned(pc) << std::endl;
+    file << "FLAGS: Z N H C" << std::endl << "       ";
+    file << std::dec << std::noshowbase;
+    file << getFlag(Z) << " " << getFlag(N) << " " << getFlag(H) <<  " " << getFlag(C) << std::endl;
     file << std::endl;
     
     return;
@@ -750,6 +732,7 @@ bool CPU::handleInterrupt() {
 // Many of these use arg1 and arg2 in different ways or not at all (eg. NOP)
 // Most commonly arg1 and arg2 will be the memory address of a register or immediate value (fetched)
 
+// Catch-all function for invalid opcodes
 uint8_t CPU::UNKNOWN() {
     throw std::invalid_argument("Invalid Opcode.");
 }
@@ -768,16 +751,21 @@ uint8_t CPU::HALT() {
     return 0;
 }
 
+// Enables master interrupt flag
 uint8_t CPU::EI() {
     ime = true;
     return 0;
 }
 
+// Disables master interrupt flag
 uint8_t CPU::DI() {
     ime = false;
     return 0;
 }
 
+// Takes register as arg1.
+// Adjusts value based on flags set from last arithmetic operation
+// to convert value to a binary coded decimal
 uint8_t CPU::DAA() {
     uint8_t val = DR_8(arg1);
     bool carry = false;
@@ -838,6 +826,9 @@ uint8_t CPU::LD_REG_8_MEM() {
     return 0;
 }
 
+
+// LDH instructions only take an 8-bit integer argument as an
+// address and index memory starting at 0xFF00
 uint8_t CPU::LDH_MEM_VAL_8() {
     fetched = DR_8(arg1) + 0xFF00;
     arg1 = &fetched;
@@ -1019,6 +1010,7 @@ uint8_t CPU::ADD_REG_8_MEM () {
     return 0;
 }
 
+// ADD instruction that also adds carry flag
 uint8_t CPU::ADC_REG_8_VAL_8() {
     uint8_t c = getFlag(C);
     bool half_carry = (DR_8(arg1) & 0x0F) + (DR_8(arg2) & 0x0F) + c > 0x0F;
@@ -1074,6 +1066,7 @@ uint8_t CPU::SUB_REG_8_MEM() {
     return 0;
 }
 
+// SUB instruction that also subtracts carry flag
 uint8_t CPU::SBC_REG_8_VAL_8() {
     uint8_t c = getFlag(C);
     uint8_t val1 = DR_8(arg1);
@@ -1102,7 +1095,7 @@ uint8_t CPU::SBC_REG_8_MEM() {
     return 0;
 }
 
-// AND, XOR, OR take two registers as OpArgs
+// AND, CP, XOR, OR take two registers or one register and an immediate as OpArgs
 uint8_t CPU::AND_REG_8_VAL_8(){
     DR_8(arg1) &= DR_8(arg2);
 
@@ -1163,6 +1156,7 @@ uint8_t CPU::OR_REG_8_MEM() {
     return 0;
 }
 
+// Essentially a SUB but the result is discarded
 uint8_t CPU::CP_REG_8_VAL_8() {
     uint8_t val1 = DR_8(arg1);
     uint8_t val2 = DR_8(arg2);
@@ -1273,6 +1267,7 @@ uint8_t CPU::JR() {
     return 0;
 }
 
+// Jumps to an absolute address. arg1 is the condition; arg2 is the absolute address
 uint8_t CPU::JP() {
     if (checkCond((COND) (uint64_t) arg1)) {
         pc = DR_16(arg2);
@@ -1316,7 +1311,7 @@ uint8_t CPU::CALL() {
     return 0;
 }
 
-// arg1 is a condition
+// arg1 is a condition upon which we return
 uint8_t CPU::RET() {
     if (checkCond((COND) (uint64_t) arg1)) {
         arg1 = &pc;
@@ -1327,6 +1322,7 @@ uint8_t CPU::RET() {
     return 0;
 }
 
+// Return and enable interupts. Commonly used to exit interrupt procedures.
 uint8_t CPU::RETI() {
     ime = true;
     RET();
@@ -1425,6 +1421,7 @@ uint8_t CPU::RR_MEM() {
     return 0;
 }
 
+// Shift left into carry. LSB set to 0. arg1 = register/memory addr
 uint8_t CPU::SLA_REG_8() {
     uint8_t carry = DR_8(arg1) >> 7;
     DR_8(arg1) <<= 1;
@@ -1448,6 +1445,7 @@ uint8_t CPU::SLA_MEM() {
     return 0;
 }
 
+// Shift right into carry. MSB doesn't change. arg1 = reg/memory addr
 uint8_t CPU::SRA_REG_8() {
     uint8_t carry = DR_8(arg1) & 0x01;
     DR_8(arg1) >>= 1;
@@ -1473,6 +1471,7 @@ uint8_t CPU::SRA_MEM() {
     return 0;
 }
 
+// Swap lower and upper nibbles. arg1 is reg/memory addr
 uint8_t CPU::SWAP_REG_8() {
     uint8_t val = DR_8(arg1);
     DR_8(arg1) = (val << 4) | (val >> 4);
@@ -1496,6 +1495,7 @@ uint8_t CPU::SWAP_MEM() {
     return 0;
 }
 
+// Shift right into carry. MSB set to 0. arg1 = reg/memory addr
 uint8_t CPU::SRL_REG_8() {
     uint8_t carry = DR_8(arg1) & 0x01;
     DR_8(arg1) >>= 1;
@@ -1520,6 +1520,7 @@ uint8_t CPU::SRL_MEM() {
     return 0;
 }
 
+// Set flags based on bit n. arg1 = reg/memory addr. arg2 = bit number (0-7)
 uint8_t CPU::BIT_REG_8() {
     uint8_t shift = (uint64_t) arg1;
     uint8_t val = (DR_8(arg2) >> shift) & 0x01;
@@ -1539,6 +1540,7 @@ uint8_t CPU::BIT_MEM() {
     return 0;
 }
 
+// Reset bit n. arg1 = reg/memory addr. arg2 = bit number (0-7)
 uint8_t CPU::RES_REG_8() {
     uint8_t bit = (uint64_t) arg1;
     DR_8(arg2) &= ~(1 << bit);
@@ -1554,6 +1556,7 @@ uint8_t CPU::RES_MEM() {
     return 0;
 }
 
+// Set bit n. arg1 = reg/memory addr. arg2 = bit number (0-7)
 uint8_t CPU::SET_REG_8() {
     uint8_t bit = (uint64_t) arg1;
     DR_8(arg2) |= (1 << bit);
