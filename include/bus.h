@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "cpu.h"
+#include "ppu.h"
 #include "cartridge.h"
 #include "interrupt.h"
 #include "timer.h"
@@ -18,9 +19,12 @@ public:
 
 private:
     CPU cpu;
+    PPU ppu;
     Timer timer;
     std::shared_ptr<Cartridge> cart;
-    std::array<uint8_t, 64 * KB> ram;
+    std::array<uint8_t, 8 * KB> ram;
+    std::array<uint8_t, 0x4C> io_ports;
+    std::array<uint8_t, 0x80> zero_page_ram;
 
     uint8_t clock_cycles;
 

@@ -59,6 +59,10 @@ void Cartridge::write(uint16_t addr, uint8_t data) {
     }
 }
 
+std::string Cartridge::getTitle() {
+    return title;
+}
+
 void Cartridge::setROMSize() {
     // not the actual size in kB
     uint8_t rom_size = rom[0x0148];

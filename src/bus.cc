@@ -11,22 +11,25 @@ Bus::Bus() {
 }
 
 void Bus::write(uint16_t addr, uint8_t data) {
+    // Write serial i/o data to console
     if (addr == 0xFF01) {
         std::cout << data;
     }
-
+    
     if (addr >= 0x0000 && addr < 0x8000) {
         cart->write(addr, data);
     } else if (addr >= 0x8000 && addr < 0xA000) {
-        ram[addr] = data;
+        ppu.write(addr, data);
     } else if (addr >= 0xA000 && addr < 0xC000) {
         cart->write(addr, data);
-    } else if (addr >= 0xC000 && addr < 0xE000) {
-        ram[addr] = data;
-    } else if (addr >= 0xE000 && addr < 0xFE00) {
-        ram[addr - 0x2000] = data;
-    } else if (addr >= 0xFE00 && addr <= 0xFFFF) {
-        ram[addr] = data;
+    } else if (addr >= 0xC000 && addr < 0xFE00) {
+        ram[addr & 0x1FFF] = data;
+    } else if (addr >= 0xFE00 && addr < 0xFEA0) {
+        ppu.write(addr, data);
+    } else if (addr >= 0xFF00 && addr < 0xFF4C) {
+        io_ports[addr & 0x00FF] = data;
+    } else if (addr >= 0xFF80 && addr <= 0xFFFF) {
+        zero_page_ram[addr] = data;
     }
 }
 
@@ -34,15 +37,17 @@ uint8_t Bus::read(uint16_t addr) {
     if (addr >= 0x0000 && addr < 0x8000) {
         return cart->read(addr);
     } else if (addr >= 0x8000 && addr < 0xA000) {
-        return ram[addr];
+        return ppu.read(addr);
     } else if (addr >= 0xA000 && addr < 0xC000) {
         return cart->read(addr);
-    } else if (addr >= 0xC000 && addr < 0xE000) {
-        return ram[addr];
-    } else if (addr >= 0xE000 && addr < 0xFE00) {
-        return ram[addr - 0x2000];
-    } else if (addr >= 0xFE00 && addr <= 0xFFFF) {
-        return ram[addr];
+    } else if (addr >= 0xC000 && addr < 0xFE00) {
+        return ram[addr & 0x1FFF];
+    } else if (addr >= 0xFE00 && addr < 0xFEA0) {
+        return ppu.read(addr);
+    } else if (addr >= 0xFF00 && addr < 0xFF4C) {
+        return io_ports[addr & 0x00FF];
+    } else if (addr >= 0xFF80 && addr <= 0xFFFF) {
+        return zero_page_ram[addr];
     }
 
     return 0;
@@ -71,6 +76,10 @@ void Bus::reset() {
 
 void Bus::clock() {
     timer.tick();
+
+    if (clock_cycles % 2 == 0) {
+        ppu.clock();
+    }
 
     if (clock_cycles % 4 == 0) {
         cpu.clock();
