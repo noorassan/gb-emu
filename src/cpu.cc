@@ -15,7 +15,6 @@ CPU::CPU() {
     file.open(LOGFILE, std::ofstream::out);
 #endif
 
-    reset();
     lookup = {
         // name, base_clock, data_len, args, fn_pointer
         {"NOP",             4,  0,   0,             0,              &CPU::NOP},

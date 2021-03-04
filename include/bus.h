@@ -14,7 +14,7 @@
 
 class Bus {
 public:
-    Bus();
+    Bus(DRAW);
     ~Bus() = default;
 
 private:

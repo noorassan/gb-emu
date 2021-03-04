@@ -11,7 +11,7 @@ void Timer::tick() {
     uint8_t tima = getTIMA();
 
     bool inc = false;
-    switch(tac) {
+    switch(tac & 0x07) {
         case 4: // 4.096 kHz
             inc = ticks % 1024 == 0;
         case 5: // 262.144 KHz
@@ -31,7 +31,7 @@ void Timer::tick() {
         }
     }
 
-    if (ticks % 4 == 0) {
+    if (ticks % 256 == 0) {
         incDIV();
     }
 }

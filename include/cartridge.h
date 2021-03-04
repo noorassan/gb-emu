@@ -7,6 +7,9 @@
 
 #include "mbc.h"
 
+#define KB 1024
+
+
 class Cartridge {
 public:
     Cartridge(const std::string &filename);

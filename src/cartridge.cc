@@ -7,8 +7,6 @@
 #include "no_mbc.h"
 #include "mbc_1.h"
 
-#define KB 1024
-
 
 Cartridge::Cartridge(const std::string &filename) {
     std::ifstream ifs;

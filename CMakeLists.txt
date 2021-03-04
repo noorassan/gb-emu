@@ -3,6 +3,7 @@ project(gb-emu)
 
 # C++ 17
 set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_BUILD_TYPE Debug)
 
 # Bring in headers from include/
 include_directories(include)
