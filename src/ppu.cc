@@ -5,8 +5,8 @@
 #include <iostream>
 
 
-PPU::PPU(DrawFn draw) {
-    this->draw = draw;
+PPU::PPU(GameboyDriver *driver) {
+    this->driver = driver;
 }
 
 void PPU::reset() {
@@ -14,6 +14,7 @@ void PPU::reset() {
     for (auto &i : vram) i = 0x00;
     cycles = 0;
 
+    transfer_cycles = 0;
     pixel_line.clear();
 
     setStatus(OAM_SEARCH);
@@ -44,6 +45,7 @@ void PPU::clock(uint8_t clocks) {
             if (cycles >= 456) {
                 uint8_t line = read(LY);
                 if (line == 153) {
+                    this->driver->render();
                     setStatus(OAM_SEARCH);
                     write(LY, 0);
                 } else {
@@ -150,7 +152,7 @@ void PPU::drawLine() {
         }
 
         COLOR color = COLOR((read(palette_addr) >> (pixel.color * 2)) & 0x03);
-        (*draw)(color, x, line);
+        this->driver->draw(color, x, line);
     }
 
     pixel_line.clear();

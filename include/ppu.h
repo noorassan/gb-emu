@@ -3,8 +3,7 @@
 #include <array>
 #include <cstdint>
 
-#include "color.h"
-#include "bus_io_fns.h"
+#include "gb_driver.h"
 
 #define SCREEN_WIDTH 160
 #define SCREEN_HEIGHT 144
@@ -30,7 +29,7 @@ class Bus;
 class PPU {
 public:
     // PPU must be instantiated with a function that allows it to output pixels
-    PPU(DrawFn draw);
+    PPU(GameboyDriver *driver);
     ~PPU() = default;
 
 public:
@@ -73,7 +72,7 @@ private:
 
     // the number of cycles spent on PIXEL_TRANSFER determines 
     // the length of H_BLANK, so we keep track of it
-    uint8_t transfer_cycles;
+    uint32_t transfer_cycles;
 
     std::array<uint8_t, 8 * KB> vram;
     std::array<uint8_t, 160> oam;
@@ -82,6 +81,7 @@ private:
     std::array<Sprite, 10> sprites;
 
     Bus *bus;
+    GameboyDriver *driver;
 
 private:
     // Handle reads and writes from the PPU itself
@@ -101,6 +101,4 @@ private:
     uint16_t getWinTilemapStart();
 
     void fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &out);
-    
-    DrawFn draw;
 };

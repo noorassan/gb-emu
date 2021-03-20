@@ -1,26 +1,16 @@
-#include <chrono>
-#include <memory>
 #include <thread>
-#include <iostream>
-
-#include <SDL.h>
 
 #include "bus.h"
 #include "controls.h"
+#include "sdl_gb_driver.h"
 
 #define SCREEN_WIDTH 160
 #define SCREEN_HEIGHT 144
 
-SDL_Renderer *renderer;
-SDL_Window *window;
-SDL_Event event;
-
-bool startSDL(std::string title) {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        return false;
-    }
-    window = NULL;
-    renderer = NULL;
+SDLGameboyDriver::SDLGameboyDriver(std::string title) {
+    SDL_Init(SDL_INIT_VIDEO);
+    window = nullptr;
+    renderer = nullptr;
 
     SDL_CreateWindowAndRenderer(SCREEN_WIDTH * 2,
                                 SCREEN_HEIGHT * 2,
@@ -29,15 +19,17 @@ bool startSDL(std::string title) {
                                 &renderer);
 
     SDL_SetWindowTitle(window, title.c_str());
-    
-    if (window == NULL || renderer == NULL) {
-        return false;
-    }
-    
-    return true;
+
+    time = std::chrono::steady_clock::now();
 }
 
-void setRendererDrawColor(COLOR color) {
+SDLGameboyDriver::~SDLGameboyDriver() {
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+}
+
+void SDLGameboyDriver::setRendererDrawColor(COLOR color) {
     switch (color) {
         case WHITE:
             SDL_SetRenderDrawColor(renderer, 155, 188, 15, 255);
@@ -54,7 +46,7 @@ void setRendererDrawColor(COLOR color) {
     }
 }
 
-void drawPixel(COLOR color, uint8_t x, uint8_t y) {
+void SDLGameboyDriver::draw(COLOR color, uint8_t x, uint8_t y) {
     if (x < SCREEN_WIDTH && y < SCREEN_HEIGHT) {
         setRendererDrawColor(color);
         SDL_RenderDrawPoint(renderer, (2 * x), (2 * y));
@@ -64,7 +56,15 @@ void drawPixel(COLOR color, uint8_t x, uint8_t y) {
     }
 }
 
-CONTROL pollControls() {
+void SDLGameboyDriver::render() {
+    SDL_RenderPresent(renderer);
+    SDL_RenderClear(renderer);
+    
+    std::this_thread::sleep_until(time + std::chrono::milliseconds(17));
+    time = std::chrono::steady_clock::now();
+}
+
+CONTROL SDLGameboyDriver::pollControls() {
     SDL_PollEvent(&event);
     if (event.type == SDL_QUIT) {
         return QUIT;
@@ -80,31 +80,13 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    std::chrono::steady_clock::time_point time;
-    Bus bus(drawPixel, pollControls);
-
     std::shared_ptr<Cartridge> cart = std::make_shared<Cartridge>(argv[1]);
+    SDLGameboyDriver driver = SDLGameboyDriver(cart->getTitle());
+
+    Bus bus(&driver);
     bus.insertCartridge(cart);
-    bus.reset(); 
+    bus.reset();
 
-    if (!startSDL(cart->getTitle())) {
-        throw std::runtime_error("Failed to start SDL.");
-    }
-
-    bool quit = false;
-    while(!quit) {
-        time = std::chrono::steady_clock::now();
-        SDL_RenderClear(renderer);
-
-        // 70224 clocks per frame
-        quit = bus.clock(70224);
-
-        SDL_RenderPresent(renderer);
-        std::this_thread::sleep_until(time + std::chrono::milliseconds(17));
-    }
-
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    bus.run();
     return EXIT_SUCCESS;
 }

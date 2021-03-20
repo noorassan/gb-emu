@@ -4,19 +4,19 @@
 #include <array>
 #include <memory>
 
-#include "bus_io_fns.h"
 #include "cpu.h"
 #include "ppu.h"
 #include "cartridge.h"
 #include "interrupt.h"
 #include "timer.h"
-#include "controls.h"
+#include "gb_driver.h"
 
 #define KB 1024
+#define POLL_INTERVAL 210672
 
 class Bus {
 public:
-    Bus(DrawFn draw, PollControlsFn poll_controls);
+    Bus(GameboyDriver *driver);
     ~Bus() = default;
 
 private:
@@ -27,10 +27,7 @@ private:
     std::array<uint8_t, 8 * KB> ram;
     std::array<uint8_t, 0xFF> zero_page_ram;
 
-    uint32_t cycles;
-    uint8_t poll_state;
-
-    PollControlsFn poll;
+    GameboyDriver *driver;
 
 public:
     uint8_t cpuRead(uint16_t addr);
@@ -46,8 +43,7 @@ public:
 
     void reset();
 
-    // Returns true on encountering QUIT and false otherwise
-    bool clock(uint32_t clocks);
+    void run();
     
     void insertCartridge(const std::shared_ptr<Cartridge> cart);
 };
