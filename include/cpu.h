@@ -25,14 +25,15 @@ public:
     ~CPU() = default;
 
 public:
-    void clock();
+    uint8_t clock();
     void reset();
 
-    uint8_t read(uint16_t addr);
-    void write(uint16_t addr, uint8_t data);
     void connectBus(Bus *bus);
 
 private:
+    uint8_t read(uint16_t addr);
+    void write(uint16_t addr, uint8_t data);
+
     Bus *bus;
 
     union {struct {uint8_t f, a;}; uint16_t af;};
@@ -44,8 +45,6 @@ private:
     // Interrupt Master Enable Flag
     // Set and reset with EI and DI instructions
     bool ime;
-
-    uint8_t cycles;
 
     uint16_t fetched;
 

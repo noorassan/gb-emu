@@ -4,7 +4,9 @@
 #include <iostream>
 
 #include <SDL.h>
+
 #include "bus.h"
+#include "controls.h"
 
 #define SCREEN_WIDTH 160
 #define SCREEN_HEIGHT 144
@@ -25,6 +27,8 @@ bool startSDL(std::string title) {
                                 SDL_WINDOW_OPENGL,
                                 &window,
                                 &renderer);
+
+    SDL_SetWindowTitle(window, title.c_str());
     
     if (window == NULL || renderer == NULL) {
         return false;
@@ -53,51 +57,50 @@ void setRendererDrawColor(COLOR color) {
 void drawPixel(COLOR color, uint8_t x, uint8_t y) {
     if (x < SCREEN_WIDTH && y < SCREEN_HEIGHT) {
         setRendererDrawColor(color);
-        SDL_RenderDrawPoint(renderer, 2 * x, 2 * y);
-        SDL_RenderDrawPoint(renderer, 2 * x + 1, 2 * y);
-        SDL_RenderDrawPoint(renderer, 2 * x, 2 * y + 1);
-        SDL_RenderDrawPoint(renderer, 2 * x + 1, 2 * y + 1);
+        SDL_RenderDrawPoint(renderer, (2 * x), (2 * y));
+        SDL_RenderDrawPoint(renderer, (2 * x) + 1, (2 * y));
+        SDL_RenderDrawPoint(renderer, (2 * x), (2 * y) + 1);
+        SDL_RenderDrawPoint(renderer, (2 * x) + 1, (2 * y) + 1);
     }
+}
+
+CONTROL pollControls() {
+    SDL_PollEvent(&event);
+    if (event.type == SDL_QUIT) {
+        return QUIT;
+    }
+
+    return NONE;
 }
 
 
 int main(int argc, char **argv) {
-    std::chrono::high_resolution_clock::time_point t1, t2;
-    std::chrono::duration<float, std::milli> time_span;
-    Bus bus(drawPixel);
+    if (argc != 2) {
+        std::cout << "Usage: " << argv[0] << " rom_file" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::chrono::steady_clock::time_point time;
+    Bus bus(drawPixel, pollControls);
 
     std::shared_ptr<Cartridge> cart = std::make_shared<Cartridge>(argv[1]);
     bus.insertCartridge(cart);
     bus.reset(); 
 
     if (!startSDL(cart->getTitle())) {
-        throw std::runtime_error("Failed to start and SDL window.");
+        throw std::runtime_error("Failed to start SDL.");
     }
 
     bool quit = false;
     while(!quit) {
-        t1 = std::chrono::high_resolution_clock::now();
-
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        time = std::chrono::steady_clock::now();
         SDL_RenderClear(renderer);
 
-        // Gameboy clock runs at 4.19 mHz.
-        // For convenience, we do all the clocks in a one second interval at once
-        // and then wait for the remainder of the second.
-        // 4.19 mHz / 60 Hz = 69,833.33 -> 69,833
-        for(uint32_t i = 0; i < 70224; i++) {
-            if (i % 1000 == 0) {
-                SDL_PollEvent(&event);
-                quit = event.type == SDL_QUIT;
-            }
+        // 70224 clocks per frame
+        quit = bus.clock(70224);
 
-            bus.clock();
-        }
-
-        t2 = std::chrono::high_resolution_clock::now();
-        time_span = std::chrono::milliseconds(17) - (t2 - t1);
-        std::this_thread::sleep_for(time_span);
         SDL_RenderPresent(renderer);
+        std::this_thread::sleep_until(time + std::chrono::milliseconds(17));
     }
 
     SDL_DestroyRenderer(renderer);

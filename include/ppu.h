@@ -30,16 +30,17 @@ class Bus;
 class PPU {
 public:
     // PPU must be instantiated with a function that allows it to output pixels
-    PPU(DRAW);
+    PPU(DrawFn draw);
     ~PPU() = default;
 
 public:
-    // Handle reads and writes coming from the bus
-    uint8_t busRead(uint16_t addr);
-    void busWrite(uint16_t addr, uint8_t data);
+    // Handle reads and writes coming from the CPU
+    uint8_t cpuRead(uint16_t addr);
+    void cpuWrite(uint16_t addr, uint8_t data);
+    bool handlesAddr(uint16_t addr);
 
     void reset();
-    void clock();
+    void clock(uint8_t clocks);
     void connectBus(Bus *bus);
 
 private:
@@ -61,53 +62,45 @@ private:
         uint8_t data;
     } Pixel;
 
-    struct SPRITE {
+    typedef struct {
         uint8_t pos_y, pos_x;
         uint8_t tile_num;
         uint8_t flags;
-    };
+    } Sprite;
 
 private:
-    uint8_t cycles;
-    uint8_t fetch_cycles;
+    uint32_t cycles;
+
+    // the number of cycles spent on PIXEL_TRANSFER determines 
+    // the length of H_BLANK, so we keep track of it
+    uint8_t transfer_cycles;
 
     std::array<uint8_t, 8 * KB> vram;
     std::array<uint8_t, 160> oam;
 
+    std::vector<Pixel> pixel_line;
+    std::array<Sprite, 10> sprites;
+
     Bus *bus;
-
-    std::vector<Pixel> pixel_fifo;
-    std::vector<Pixel> pending_fifo;
-    std::array<SPRITE, 10> sprites;
-
-    // Describes position on screen to output to next
-    uint8_t x_pos;
-
-    // Describes tile to be fetched next
-    uint8_t tile_num;
-    
-    uint8_t skip_pixels;
-
-    bool new_status;
 
 private:
     // Handle reads and writes from the PPU itself
-    uint8_t ppuRead(uint16_t addr);
-    void ppuWrite(uint16_t addr, uint8_t data);
-
-    void clockPixelFIFO();
+    uint8_t read(uint16_t addr);
+    void write(uint16_t addr, uint8_t data);
 
     PPU_STATUS getStatus();
     void setStatus(PPU_STATUS status);
 
-    uint8_t getLY();
-    void setLY(uint8_t val);
+    void fetchLine();
+    void drawLine();
+
+    void clockPixelFIFO();
+    void statInterrupt();
 
     uint16_t getBGTilemapStart();
     uint16_t getWinTilemapStart();
-    void fetchTileLine(uint8_t tile_id);
 
-    uint8_t fetchPixels();
+    void fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &out);
     
-    void (*draw)(COLOR color, uint8_t x, uint8_t y);
+    DrawFn draw;
 };

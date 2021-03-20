@@ -6,52 +6,68 @@ void Timer::connectBus(Bus *bus) {
     this->bus = bus;
 }
 
-void Timer::tick() {
-    uint8_t tac = getTAC();
-    uint8_t tima = getTIMA();
-
-    bool inc = false;
-    switch(tac & 0x07) {
-        case 4: // 4.096 kHz
-            inc = ticks % 1024 == 0;
-        case 5: // 262.144 KHz
-            inc = ticks % 16 == 0;
-        case 6: // 65.536 KHz
-            inc = ticks % 64 == 0;
-        case 7: // 16.384 KHz
-            inc = ticks % 256 == 0;
+void Timer::clock(uint8_t clocks) {
+    // cycles will be at most 16, so it's not a problem to process all the cycles at once
+    // because we'll never have two increments of TIMA per clock
+    if (wait_cycles > 0 && (wait_cycles -= clocks) < 0) {
+        write(TIMA, read(TMA));
+        bus->requestInterrupt(INTERRUPT::TIMER);
     }
 
-    if (inc) {
-        if (tima == 0xFF) {
-            bus->requestInterrupt(TIMER);
-            setTIMA(getTMA());            
-        } else {
-            setTIMA(tima + 1);
+    internal_div += clocks;
+    bool and_result = (read(TAC) & 0x03) &&
+                      ((read(DIV) >> getDIVBitPos()) & 0x01);
+
+    if (last_and_result && !and_result) {
+        if (read(TIMA) == 0xFF) {
+            overflowed = true;
+            wait_cycles = 4;
         }
+
+        write(TIMA, read(TIMA) + 1);
     }
 
-    if (ticks % 256 == 0) {
-        incDIV();
+    last_and_result = and_result;
+}
+
+uint8_t Timer::getDIVBitPos() {
+    switch (read(TAC) & 0x03) {
+        case 0:
+            return 9;
+        case 1:
+            return 3;
+        case 2:
+            return 5;
+        case 3:
+            return 7;
+    }
+
+    return 0;
+}
+
+void Timer::write(uint16_t addr, uint8_t data) {
+    bus->timerWrite(addr, data);
+}
+
+uint8_t Timer::read(uint16_t addr) {
+    return bus->timerRead(addr);
+}
+
+void Timer::cpuWrite(uint16_t addr, uint8_t data) {
+    if (addr == DIV) {
+        internal_div = 0;
+        write(DIV, 0);
+    } else if (addr == TIMA) {
+        wait_cycles = 0;
+        write(TIMA, 0);
     }
 }
 
-uint8_t Timer::getTAC() {
-    return bus->read(TAC);
+uint8_t Timer::cpuRead(uint16_t addr) {
+    return read(addr);
 }
 
-uint8_t Timer::getTIMA() {
-    return bus->read(TIMA);
-}
-
-uint8_t Timer::getTMA() {
-    return bus->read(TMA);
-}
-
-void Timer::setTIMA(uint8_t val) {
-    bus->write(TIMA, val);
-}
-
-void Timer::incDIV() {
-    bus->write(DIV, bus->read(DIV) + 1);
+bool Timer::handlesAddr(uint16_t addr) {
+    return (addr == DIV) ||
+           (addr == TIMA);
 }

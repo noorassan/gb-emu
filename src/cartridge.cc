@@ -98,6 +98,7 @@ void Cartridge::setRAMSize() {
     }
 
     ram.resize(num_banks * 2 * KB);
+    for (auto &i : ram) i = 0x00;
     return;
 }
 

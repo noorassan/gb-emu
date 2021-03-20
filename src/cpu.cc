@@ -567,11 +567,11 @@ CPU::CPU() {
 
 // read & write to/from bus
 uint8_t CPU::read(uint16_t addr) {
-    return bus->read(addr);
+    return bus->cpuRead(addr);
 }
 
 void CPU::write(uint16_t addr, uint8_t data) {
-    bus->write(addr, data);
+    bus->cpuWrite(addr, data);
 }
 
 void CPU::connectBus(Bus *bus) {
@@ -591,50 +591,47 @@ void CPU::reset() {
 }
 
 
-void CPU::clock() {
-    // If there are no more cycles left to complete, then we can execute the next instruction
-    if (cycles == 0) {
-        // Check for interrupts and service
-        if (ime && handleInterrupt()) {
-            return;
-        }
-
-        // Fetch next instruction and increment pc
-        uint8_t opcode = read(pc);
-        INSTRUCTION instr = lookup[opcode];
-
-        // Fetch data -- 0, 1, or 2 bytes
-        if (instr.data_len >= 1) {
-            fetched = read(pc + 1);
-        }
-        if (instr.data_len == 2) {
-            fetched |= read(pc + 2) << 8;
-        }
-
-        // Handle PREFIX CB opcodes
-        if (opcode == 0xCB) {
-            instr = lookup_cb[fetched];
-        }
-
-#ifdef LOGFILE
-        print_log(opcode, instr);
-#endif
-
-        // Increment pc
-        pc += 1 + instr.data_len;
-
-        // Set arguments
-        arg1 = instr.arg1;
-        arg2 = instr.arg2;
-        
-        // Increment clock
-        cycles += instr.base_clock;
-
-        // Instructions will return the number of extra cycles necessary
-        cycles += (this->*instr.operate)();
+uint8_t CPU::clock() {
+    // Check for interrupts and service
+    if (ime && handleInterrupt()) {
+        return 0;
     }
 
-    cycles--;
+    // Fetch next instruction and increment pc
+    uint8_t opcode = read(pc);
+    INSTRUCTION instr = lookup[opcode];
+
+    // Fetch data -- 0, 1, or 2 bytes
+    if (instr.data_len >= 1) {
+        fetched = read(pc + 1);
+    }
+    if (instr.data_len == 2) {
+        fetched |= read(pc + 2) << 8;
+    }
+
+    // Handle PREFIX CB opcodes
+    if (opcode == 0xCB) {
+        instr = lookup_cb[fetched];
+    }
+
+#ifdef LOGFILE
+    print_log(opcode, instr);
+#endif
+
+    // Increment pc
+    pc += 1 + instr.data_len;
+
+    // Set arguments
+    arg1 = instr.arg1;
+    arg2 = instr.arg2;
+    
+    // Increment clock
+    uint8_t cycles = instr.base_clock;
+
+    // Instructions will return the number of extra cycles necessary
+    cycles += (this->*instr.operate)();
+
+    return cycles;
 }
 
 #ifdef LOGFILE
