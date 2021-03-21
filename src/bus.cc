@@ -34,6 +34,11 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
 }
 
 uint8_t Bus::cpuRead(uint16_t addr) {
+    // TODO: Remove when controls are implemented
+    if (addr == 0xFF00) {
+        return 8;
+    }
+
     if (addr >= 0x0000 && addr < 0x8000) {
         return cart->read(addr);
     } else if (addr >= 0x8000 && addr < 0xA000) {

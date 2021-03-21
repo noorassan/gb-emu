@@ -86,6 +86,7 @@ public:
     std::string disassemble(INSTRUCTION instr);
 
 private:
+    void flipFlag(FLAG flag);
     void setFlag(FLAG flag, bool val);
     bool getFlag(FLAG flag);
     bool checkCond(COND cond);

@@ -7,6 +7,7 @@
 
 #define DR_16(X) (*(uint16_t *) X)
 #define DR_8(X) (*(uint8_t *) X)
+#define DRS_8(X) (*(int8_t *) X)
 
 
 CPU::CPU() {
@@ -657,6 +658,10 @@ void CPU::print_log(uint8_t opcode, INSTRUCTION instr) {
 #endif
 
 // Flag operations
+void CPU::flipFlag(FLAG flag) {
+    f ^= flag;
+}
+
 void CPU::setFlag(FLAG flag, bool val) {
     if (val) {
         f |= flag;
@@ -826,16 +831,12 @@ uint8_t CPU::LD_REG_8_MEM() {
 // LDH instructions only take an 8-bit integer argument as an
 // address and index memory starting at 0xFF00
 uint8_t CPU::LDH_MEM_VAL_8() {
-    fetched = DR_8(arg1) + 0xFF00;
-    arg1 = &fetched;
-    LD_MEM_VAL_8();
+    write(DR_8(arg1) + 0xFF00, DR_8(arg2));
     return 0;
 }
 
 uint8_t CPU::LDH_REG_8_MEM() {
-    fetched = DR_8(arg2) + 0xFF00;
-    arg2 = &fetched;
-    LD_REG_8_MEM();
+    DR_8(arg1) = read(0xFF00 + DR_8(arg2));
     return 0;
 }
 
@@ -864,10 +865,11 @@ uint8_t CPU::INC_REG_16() {
 }
 
 uint8_t CPU::INC_REG_8() {
-    bool half_carry = (DR_8(arg1) & 0x0F) == 0x0F;
-    DR_8(arg1)++;
+    uint8_t val = DR_8(arg1);
+    bool half_carry = (val & 0x0F) == 0x0F;
+    DR_8(arg1) = val + 1;
 
-    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(Z, val == 0xFF);
     setFlag(N, 0);
     setFlag(H, half_carry);
     return 0;
@@ -890,10 +892,11 @@ uint8_t CPU::DEC_REG_16() {
 }
 
 uint8_t CPU::DEC_REG_8() {
-    bool half_carry = (DR_8(arg1) & 0x0F) == 0x00;
-    DR_8(arg1)--;
+    uint8_t val = DR_8(arg1);
+    bool half_carry = (val & 0x0F) == 0x00;
+    DR_8(arg1) = val - 1;
 
-    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(Z, val == 1);
     setFlag(N, 1);
     setFlag(H, half_carry); // set if borrow from bit 4
     return 0;
@@ -947,8 +950,10 @@ uint8_t CPU::LDD_REG_8_MEM() {
 
 // For ADD instructions, arg1 is the destination, arg2 is the source value
 uint8_t CPU::ADD_REG_16_VAL_16() {
-    bool half_carry = (DR_16(arg1) & 0x0FFF) + (DR_16(arg2) & 0x0FFF) > 0x0FFF;
-    uint32_t sum = DR_16(arg1) + DR_16(arg2);
+    uint16_t val1 = DR_16(arg1);
+    uint16_t val2 = DR_16(arg2);
+    bool half_carry = (val1 & 0x0FFF) + (val2 & 0x0FFF) > 0x0FFF;
+    uint32_t sum = val1 + val2;
     DR_16(arg1) = (uint16_t) sum;
 
     setFlag(N, 0);
@@ -960,16 +965,17 @@ uint8_t CPU::ADD_REG_16_VAL_16() {
 // For this instruction, arg2 is a signed value
 uint8_t CPU::ADD_REG_16_VAL_8() {
     bool carry, half_carry;
-    int8_t val = *(int8_t *) arg2;
-    uint16_t sum = DR_16(arg1) + val;
+    uint16_t val1 = DR_16(arg1);
+    int8_t val2 = DRS_8(arg2);
+    uint16_t sum = val1 + val2;
 
     // check sign
-    if (val >= 0) {
-        carry = (DR_16(arg1) & 0xFF) + val > 0xFF;
-        half_carry = (DR_16(arg1) & 0x0F) + (val & 0x0F) > 0x0F;
+    if (val2 >= 0) {
+        carry = (val1 & 0xFF) + val2 > 0xFF;
+        half_carry = (val1 & 0x0F) + (val2 & 0x0F) > 0x0F;
     } else {
-        carry = (sum & 0xFF) <= (DR_16(arg1) & 0xFF);
-        half_carry = (sum & 0x0F) <= (DR_16(arg1) & 0x0F);
+        carry = (sum & 0xFF) <= (val1 & 0xFF);
+        half_carry = (sum & 0x0F) <= (val1 & 0x0F);
     }
 
     DR_16(arg1) = sum;
@@ -982,8 +988,10 @@ uint8_t CPU::ADD_REG_16_VAL_8() {
 }
 
 uint8_t CPU::ADD_REG_8_VAL_8 () {
-    bool half_carry = (DR_8(arg1) & 0x0F) + (DR_8(arg2) & 0x0F) > 0x0F;
-    uint16_t sum = DR_8(arg1) + DR_8(arg2);
+    uint8_t val1 = DR_8(arg1);
+    uint8_t val2 = DR_8(arg2);
+    bool half_carry = (val1 & 0x0F) + (val2 & 0x0F) > 0x0F;
+    uint16_t sum = val1 + val2;
     DR_8(arg1) = (uint8_t) sum;
 
     setFlag(Z, (uint8_t) sum == 0);
@@ -994,10 +1002,11 @@ uint8_t CPU::ADD_REG_8_VAL_8 () {
 }
 
 uint8_t CPU::ADD_REG_8_MEM () {
-    uint8_t val = read(DR_16(arg2));
-    bool half_carry = (DR_8(arg1) & 0x0F) + (val & 0x0F) > 0x0F;
-    uint16_t sum = DR_8(arg1) + val;
-    *(uint8_t *) arg1 = (uint8_t) sum;
+    uint8_t val1 = DR_8(arg1);
+    uint8_t val2 = read(DR_16(arg2));
+    bool half_carry = (val1 & 0x0F) + (val2 & 0x0F) > 0x0F;
+    uint16_t sum = val1 + val2;
+    DR_8(arg1) = (uint8_t) sum;
 
     setFlag(Z, (uint8_t) sum == 0);
     setFlag(N, 0);
@@ -1009,8 +1018,10 @@ uint8_t CPU::ADD_REG_8_MEM () {
 // ADD instruction that also adds carry flag
 uint8_t CPU::ADC_REG_8_VAL_8() {
     uint8_t c = getFlag(C);
-    bool half_carry = (DR_8(arg1) & 0x0F) + (DR_8(arg2) & 0x0F) + c > 0x0F;
-    uint16_t sum = DR_8(arg1) + DR_8(arg2) + c;
+    uint8_t val1 = DR_8(arg1);
+    uint8_t val2 = DR_8(arg2);
+    bool half_carry = (val1 & 0x0F) + (val2 & 0x0F) + c > 0x0F;
+    uint16_t sum = val1 + val2 + c;
     DR_8(arg1) = (uint8_t) sum;
 
     setFlag(Z, (uint8_t) sum == 0);
@@ -1022,10 +1033,11 @@ uint8_t CPU::ADC_REG_8_VAL_8() {
 
 uint8_t CPU::ADC_REG_8_MEM() {
     uint8_t c = getFlag(C);
-    uint8_t val = read(DR_16(arg2));
-    bool half_carry = (DR_8(arg1) & 0x0F) + (val & 0x0F) + c > 0x0F;
-    uint16_t sum = DR_8(arg1) + val + c;
-    *(uint8_t *) arg1 = (uint8_t) sum;
+    uint8_t val1 = DR_8(arg1);
+    uint8_t val2 = read(DR_16(arg2));
+    bool half_carry = (val1 & 0x0F) + (val2 & 0x0F) + c > 0x0F;
+    uint16_t sum = val1 + val2 + c;
+    DR_8(arg1) = (uint8_t) sum;
 
     setFlag(Z, (uint8_t) sum == 0);
     setFlag(N, 0);
@@ -1040,9 +1052,10 @@ uint8_t CPU::SUB_REG_8_VAL_8() {
     uint8_t val1 = DR_8(arg1);
     uint8_t val2 = DR_8(arg2);
     bool half_carry = (val1 & 0x0F) < (val2 & 0x0F);
-    DR_8(arg1) = val1 - val2;
+    uint8_t diff = val1 - val2;
+    DR_8(arg1) = diff;
 
-    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(Z, diff == 0);
     setFlag(N, 1);
     setFlag(H, half_carry);
     setFlag(C, val1 < val2);
@@ -1053,9 +1066,10 @@ uint8_t CPU::SUB_REG_8_MEM() {
     uint8_t val1 = DR_8(arg1);
     uint8_t val2 = read(DR_16(arg2));
     bool half_carry = (val1 & 0x0F) < (val2 & 0x0F);
-    DR_8(arg1) = val1 - val2;
+    uint8_t diff = val1 - val2;
+    DR_8(arg1) = diff;
 
-    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(Z, diff == 0);
     setFlag(N, 1);
     setFlag(H, half_carry);
     setFlag(C, val1 < val2);
@@ -1068,9 +1082,10 @@ uint8_t CPU::SBC_REG_8_VAL_8() {
     uint8_t val1 = DR_8(arg1);
     uint8_t val2 = DR_8(arg2);
     bool half_carry = (val1 & 0x0F) < ((val2 & 0x0F) + c);
-    DR_8(arg1) = val1 - (val2 + c);
+    uint8_t diff = val1 - (val2 + c);
+    DR_8(arg1) = diff;
 
-    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(Z, diff == 0);
     setFlag(N, 1);
     setFlag(H, half_carry);
     setFlag(C, val1 < val2 + c);
@@ -1082,9 +1097,10 @@ uint8_t CPU::SBC_REG_8_MEM() {
     uint8_t val1 = DR_8(arg1);
     uint8_t val2 = read(DR_16(arg2));
     bool half_carry = (val1 & 0x0F) < ((val2 & 0x0F) + c);
-    DR_8(arg1) = val1 - (val2 + c);
+    uint8_t diff = val1 - (val2 + c);
+    DR_8(arg1) = diff;
 
-    setFlag(Z, DR_8(arg1) == 0);
+    setFlag(Z, diff == 0);
     setFlag(N, 1);
     setFlag(H, half_carry);
     setFlag(C, val1 < val2 + c);
@@ -1198,7 +1214,7 @@ uint8_t CPU::SCF() {
 uint8_t CPU::CCF() {
     setFlag(N, 0);
     setFlag(H, 0);
-    setFlag(C, !getFlag(C));
+    flipFlag(C);
     return 0;
 }
 
@@ -1206,9 +1222,11 @@ uint8_t CPU::CCF() {
 // RLA and RRA rotate through the carry bit (bit 7 -> C -> bit 0 or opposite)
 // RLCA and RRCA rotate the integer and copy the bit that switched sides to the carry bit
 uint8_t CPU::RLA() {
-    uint8_t carry = DR_8(arg1) >> 7;
-    DR_8(arg1) <<= 1;
-    DR_8(arg1) |= getFlag(C);
+    uint8_t val = DR_8(arg1);
+    uint8_t carry = val >> 7;
+    val <<= 1;
+    val |= getFlag(C);
+    DR_8(arg1) = val;
 
     setFlag(Z, 0);
     setFlag(N, 0);
@@ -1218,9 +1236,11 @@ uint8_t CPU::RLA() {
 }
 
 uint8_t CPU::RRA() {
-    uint8_t carry = DR_8(arg1) & 0x01;
-    DR_8(arg1) >>= 1;
-    DR_8(arg1) |= getFlag(C) << 7;
+    uint8_t val = DR_8(arg1);
+    uint8_t carry = val & 0x01;
+    val >>= 1;
+    val |= getFlag(C) << 7;
+    DR_8(arg1) = val;
 
     setFlag(Z, 0);
     setFlag(N, 0);
@@ -1230,9 +1250,11 @@ uint8_t CPU::RRA() {
 }
 
 uint8_t CPU::RLCA() {
-    uint8_t carry = DR_8(arg1) >> 7;
-    DR_8(arg1) <<= 1;
-    DR_8(arg1) |= carry;
+    uint8_t val = DR_8(arg1);
+    uint8_t carry = val >> 7;
+    val <<= 1;
+    val |= carry;
+    DR_8(arg1) = val;
 
     setFlag(Z, 0);
     setFlag(N, 0);
@@ -1242,9 +1264,11 @@ uint8_t CPU::RLCA() {
 }
 
 uint8_t CPU::RRCA() {
-    uint8_t carry = DR_8(arg1) & 0x01;
-    DR_8(arg1) >>= 1;
-    DR_8(arg1) |= (carry << 7);
+    uint8_t val = DR_8(arg1);
+    uint8_t carry = val & 0x01;
+    val >>= 1;
+    val |= (carry << 7);
+    DR_8(arg1) = val;
 
     setFlag(Z, 0);
     setFlag(N, 0);
@@ -1256,7 +1280,7 @@ uint8_t CPU::RRCA() {
 // arg1 is the condition upon which we jump; arg2 is the relative address displacement
 uint8_t CPU::JR() {
     if (checkCond((COND) (uint64_t) arg1)) {
-        pc += *(int8_t *) arg2;
+        pc += DRS_8(arg2);
         return 4;
     }
 
@@ -1428,6 +1452,7 @@ uint8_t CPU::SLA_REG_8() {
     setFlag(C, carry);
     return 0;
 }
+
 uint8_t CPU::SLA_MEM() {
     uint8_t val = read(DR_16(arg1));
     uint8_t carry = val >> 7;
@@ -1453,6 +1478,7 @@ uint8_t CPU::SRA_REG_8() {
     setFlag(C, carry);
     return 0;
 }
+
 uint8_t CPU::SRA_MEM() {
     uint8_t val = read(DR_16(arg1));
     uint8_t carry = val & 0x01;
