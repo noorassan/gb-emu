@@ -5,4 +5,5 @@ enum COLOR {
     LIGHT_GREEN,
     DARK_GREEN,
     BLACK,
+    UNLIT,
 };

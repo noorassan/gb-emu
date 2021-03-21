@@ -7,6 +7,7 @@
 
 PPU::PPU(GameboyDriver *driver) {
     this->driver = driver;
+    pixel_line.reserve(SCREEN_WIDTH);
 }
 
 void PPU::reset() {
@@ -79,12 +80,41 @@ void PPU::clock(uint8_t clocks) {
 }
 
 void PPU::fetchLine() {
+    // TODO: More accurate transfer cycle emulation
     transfer_cycles = 172;
+
+    uint8_t line = read(LY);
+    uint8_t win_x = read(WX) - 7;
+    uint8_t win_y = read(WY);
+
+    // Fetch more or less BG pixels based on window
+    if (isWinEnabled() && (line >= win_y) && (win_x <= SCREEN_WIDTH)) {
+        fetchBG(line, win_x);
+        //fetchWin();
+    } else {
+        fetchBG(line, SCREEN_WIDTH);
+    }
+
+    //fetchOBJ();
+}
+
+void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
+    // If BG is not enabled we give unlit pixels
+    if (!isBGEnabled()) {
+        Pixel pixel;
+        pixel.data = 0;
+        pixel.unlit = 1;
+
+        while(pixel_line.size() < num_pixels) {
+            pixel_line.push_back(pixel);
+        }
+
+        return;
+    }
 
     std::vector<Pixel> fetched;
     uint8_t scroll_x = read(SCX);
     uint8_t scroll_y = read(SCY);
-    uint8_t line = read(LY);
 
     uint8_t skip_pixels = scroll_x % 8;
 
@@ -96,7 +126,8 @@ void PPU::fetchLine() {
     uint8_t tile_line = (scroll_y + line) % 8;
     uint16_t tile_addr = getBGTilemapStart() + tile_x + tile_y * 0x20;
 
-    while (pixel_line.size() < SCREEN_WIDTH) {
+    uint8_t left_to_fetch = num_pixels - pixel_line.size();
+    while (left_to_fetch > 0) {
         uint8_t tile_id = read(tile_addr);
         fetchTileLine(tile_id, tile_line, fetched);
 
@@ -106,12 +137,19 @@ void PPU::fetchLine() {
             skip_pixels = 0;
         }
 
-        // Insert fetched pixels
-        pixel_line.insert(pixel_line.end(), fetched.begin(), fetched.end());
+        // Make sure we don't insert too many pixels
+        uint8_t num_insert = std::min((uint8_t) fetched.size(), left_to_fetch);
+
+        // Insert pixels
+        pixel_line.insert(pixel_line.end(), fetched.begin(), fetched.begin() + num_insert);
 
         fetched.clear();
         tile_addr++;
+        left_to_fetch = pixel_line.size() - num_pixels;
     }
+}
+
+void PPU::fetchWin(uint8_t line) {
 }
 
 void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &out) {
@@ -119,7 +157,7 @@ void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &
     if (read(LCDC) & 0x10) {
         addr = 0x8000 + (tile_id * 0x10);
     } else {
-        addr = 0x8800 + (((int8_t) tile_id) * 0x10);
+        addr = 0x9000 + (((int8_t) tile_id) * 0x10);
     }
 
     addr += tile_line * 2;
@@ -129,6 +167,7 @@ void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &
         Pixel temp;
         temp.data = 0;
         temp.bgp = 1;
+        temp.unlit = 0;
         temp.color = (((low_color >> i) & 0x01) << 0) | 
                      (((high_color >> i) & 0x01) << 1);
 
@@ -152,11 +191,15 @@ void PPU::drawLine() {
             palette_addr = OBP0;
         } else if (pixel.obp1) {
             palette_addr = OBP1;
-        } else {
-            throw std::invalid_argument("Cannot output pixel without palette.");
         }
 
-        COLOR color = COLOR((read(palette_addr) >> (pixel.color * 2)) & 0x03);
+        COLOR color;
+        if (pixel.unlit) {
+            color = UNLIT;
+        } else {
+            color = COLOR((read(palette_addr) >> (pixel.color * 2)) & 0x03);
+        }
+
         this->driver->draw(color, x, line);
     }
 
@@ -199,6 +242,18 @@ void PPU::setStatus(PPU_STATUS status) {
 
 bool PPU::isPPUEnabled() {
     return read(LCDC) & 0x80;
+}
+
+bool PPU::isWinEnabled() {
+    return (read(LCDC) & 0x21) == 0x21;
+}
+
+bool PPU::isBGEnabled() {
+    return read(LCDC) & 0x01;
+}
+
+bool PPU::isOBJEnabled() {
+    return read(LCDC) & 0x02;
 }
 
 uint8_t PPU::cpuRead(uint16_t addr) {

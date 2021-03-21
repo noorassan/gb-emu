@@ -43,6 +43,8 @@ void SDLGameboyDriver::setRendererDrawColor(COLOR color) {
         case BLACK:
             SDL_SetRenderDrawColor(renderer, 15, 56, 15, 255);
             break;
+        case UNLIT:
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     }
 }
 

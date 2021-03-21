@@ -57,6 +57,7 @@ private:
             unsigned obp0 : 1;
             unsigned obp1 : 1;
             unsigned bg_priority : 1; // 0 = obj above bg; 1 = obj behind bg color 1-3
+            unsigned unlit: 1; // If the bg/win are disabled they display as actual white
         };
         uint8_t data;
     } Pixel;
@@ -92,8 +93,17 @@ private:
     void setStatus(PPU_STATUS status);
 
     bool isPPUEnabled();
+    bool isWinEnabled();
+    bool isBGEnabled();
+    bool isOBJEnabled();
 
     void fetchLine();
+
+    // Fetches the first num_pixels pixels of the bg for line
+    void fetchBG(uint8_t line, uint8_t num_pixels);
+    void fetchWin(uint8_t line);
+    void fetchOBJ();
+
     void drawLine();
 
     void clockPixelFIFO();
