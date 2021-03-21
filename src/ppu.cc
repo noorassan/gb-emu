@@ -23,6 +23,7 @@ void PPU::reset() {
 
 void PPU::clock(uint8_t clocks) {
     cycles += clocks;
+
     switch (getStatus()) {
         case H_BLANK: {
             uint32_t hblank_cycles = 376 - transfer_cycles;
@@ -136,6 +137,10 @@ void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &
 }
 
 void PPU::drawLine() {
+    if (!isPPUEnabled()) {
+        return;
+    }
+
     uint8_t line = read(LY);
 
     for (uint8_t x = 0; x < SCREEN_WIDTH; x++) {
@@ -184,7 +189,7 @@ uint16_t PPU::getWinTilemapStart() {
 }
 
 PPU::PPU_STATUS PPU::getStatus() {
-    return PPU_STATUS(read(STAT) & 0x03);
+    return (PPU_STATUS) (read(STAT) & 0x03);
 }
 
 void PPU::setStatus(PPU_STATUS status) {
@@ -192,17 +197,21 @@ void PPU::setStatus(PPU_STATUS status) {
     write(STAT, stat_val);
 }
 
+bool PPU::isPPUEnabled() {
+    return read(LCDC) & 0x80;
+}
+
 uint8_t PPU::cpuRead(uint16_t addr) {
     if (addr >= 0x8000 && addr < 0xA000) {
-        //PPU_STATUS status = getStatus();
-        //if (status != PIXEL_TRANSFER) {
+        PPU_STATUS status = getStatus();
+        if (!isPPUEnabled() || status != PIXEL_TRANSFER) {
             return vram[addr & 0x7FFF];
-        //}
+        }
     } else if (addr >= 0xFE00 && addr < 0xFEA0) {
-        //PPU_STATUS status = getStatus();
-        //if (status != OAM_SEARCH && status != PIXEL_TRANSFER) {
+        PPU_STATUS status = getStatus();
+        if (!isPPUEnabled() || (status != OAM_SEARCH && status != PIXEL_TRANSFER)) {
             return oam[addr & 0x01FF];
-        //}
+        }
     } else if (addr == LY) {
         return read(LY);
     }
@@ -212,15 +221,15 @@ uint8_t PPU::cpuRead(uint16_t addr) {
 
 void PPU::cpuWrite(uint16_t addr, uint8_t data) {
     if (addr >= 0x8000 && addr < 0xA000) {
-        //PPU_STATUS status = getStatus();
-        //if (status != PIXEL_TRANSFER) {
+        PPU_STATUS status = getStatus();
+        if (!isPPUEnabled() || status != PIXEL_TRANSFER) {
             vram[addr & 0x7FFF] = data;
-        //}
+        }
     } else if (addr >= 0xFE00 && addr < 0xFEA0) {
-        //PPU_STATUS status = getStatus();
-        //if (status != OAM_SEARCH && status != PIXEL_TRANSFER) {
+        PPU_STATUS status = getStatus();
+        if (!isPPUEnabled() || (status != OAM_SEARCH && status != PIXEL_TRANSFER)) {
             oam[addr & 0x01FF] = data;
-        //}
+        }
     } else if (addr == LY) {
         // all writes to LY reset the register
         write(LY, 0);

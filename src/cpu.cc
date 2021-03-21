@@ -691,6 +691,11 @@ bool CPU::handleInterrupt() {
     uint8_t intrs = intr_flags & read(IE);
     uint16_t jump_addr = 0x0000;
 
+    // No interrupts enabled and requested
+    if ((intrs & 0x1F) == 0) {
+        return false;
+    }
+
     if (intrs & V_BLANK) {
         write(IF, intr_flags & ~V_BLANK);
         jump_addr = VBLANK_A;
@@ -708,20 +713,15 @@ bool CPU::handleInterrupt() {
         jump_addr = JOYPAD_A;
     }
 
-    // Check if jump_addr was not adjusted -> no interrupts need to occur
-    if (jump_addr != 0x0000) {
-        ime = false; // So that interrupts aren't interrupted
+    ime = false; // So that interrupts aren't interrupted
 
-        // Set up a call to CALL instruction for convenience
-        fetched = jump_addr;
-        arg1 = (OpArg) NONE;
-        arg2 = &fetched;
-        CALL();
+    // Set up a call to CALL instruction for convenience
+    fetched = jump_addr;
+    arg1 = (OpArg) NONE;
+    arg2 = &fetched;
+    CALL();
 
-        return true;
-    }
-
-    return false;
+    return true;
 }
 
 // OPCODE IMPLEMENTATIONS

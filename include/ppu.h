@@ -91,6 +91,8 @@ private:
     PPU_STATUS getStatus();
     void setStatus(PPU_STATUS status);
 
+    bool isPPUEnabled();
+
     void fetchLine();
     void drawLine();
 

@@ -12,10 +12,6 @@ Bus::Bus(GameboyDriver *driver) : ppu(driver) {
 }
 
 void Bus::cpuWrite(uint16_t addr, uint8_t data) {
-    if (addr == 0xFF01) {
-        std::cout << data;
-    }
-
     if (addr >= 0x0000 && addr < 0x8000) {
         cart->write(addr, data);
     } else if (addr >= 0x8000 && addr < 0xA000) {
