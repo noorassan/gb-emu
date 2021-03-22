@@ -79,7 +79,7 @@ uint8_t Bus::ppuRead(uint16_t addr) {
 }
 
 void Bus::requestInterrupt(INTERRUPT intr) {
-    cpuWrite(IF, cpuRead(IF) | intr);
+    cpu.requestInterrupt(intr);
 }
 
 void Bus::reset() {

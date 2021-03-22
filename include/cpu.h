@@ -29,6 +29,7 @@ public:
     void reset();
 
     void connectBus(Bus *bus);
+    void requestInterrupt(INTERRUPT intr);
 
 private:
     uint8_t read(uint16_t addr);
@@ -45,6 +46,7 @@ private:
     // Interrupt Master Enable Flag
     // Set and reset with EI and DI instructions
     bool ime;
+    bool halted;
 
     uint16_t fetched;
 

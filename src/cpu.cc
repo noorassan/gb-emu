@@ -579,10 +579,16 @@ void CPU::connectBus(Bus *bus) {
     this->bus = bus;
 }
 
+void CPU::requestInterrupt(INTERRUPT intr) {
+    write(IF, read(IF) | intr);
+    halted = false;
+}
+
 
 // CPU functions
 void CPU::reset() {
     ime = false;
+    halted = false;
     af = 0x01B0;
     bc = 0x0013;
     de = 0x00D8;
@@ -593,6 +599,10 @@ void CPU::reset() {
 
 
 uint8_t CPU::clock() {
+    if (halted) {
+        return 4;
+    }
+
     // Check for interrupts and service
     if (ime && handleInterrupt()) {
         return 0;
@@ -600,7 +610,7 @@ uint8_t CPU::clock() {
 
     // Fetch next instruction and increment pc
     uint8_t opcode = read(pc);
-    INSTRUCTION instr = lookup[opcode];
+    INSTRUCTION &instr = lookup[opcode];
 
     // Fetch data -- 0, 1, or 2 bytes
     if (instr.data_len >= 1) {
@@ -749,6 +759,7 @@ uint8_t CPU::STOP() {
 
 // TODO: Implement -- should halt processor until an interrupt is initiated
 uint8_t CPU::HALT() {
+    halted = true;
     return 0;
 }
 
