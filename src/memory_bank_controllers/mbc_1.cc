@@ -7,7 +7,7 @@ MBC1::MBC1() {
     bank_specifier = 0;
 }
 
-bool MBC1::read(uint16_t addr, uint16_t &mapped_addr, bool &rom_read) {
+bool MBC1::read(uint16_t addr, uint32_t &mapped_addr, bool &rom_read) {
     if (addr >= 0x0000 && addr < 0x4000) {
         mapped_addr = addr;
         rom_read = true;
@@ -27,7 +27,7 @@ bool MBC1::read(uint16_t addr, uint16_t &mapped_addr, bool &rom_read) {
     return false;
 }
 
-bool MBC1::write(uint16_t addr, uint8_t data, uint16_t &mapped_addr) {
+bool MBC1::write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) {
     if (addr >= 0x0000 && addr < 0x2000) {
         ram_enabled = (data & 0x0F) == 0x0A;
     } else if (addr >= 0x2000 && addr < 0x4000) {

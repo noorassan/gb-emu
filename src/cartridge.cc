@@ -14,7 +14,7 @@ Cartridge::Cartridge(const std::string &filename) {
 
     if (ifs.good()) {
         // read first 0x200 bytes into ROM bank #0
-        rom.resize(0x200);
+        rom.resize(0x4000);
         ifs.read((char *) rom.data(), 0x200);
         
         // grab game title in a mildly sneaky manner
@@ -36,7 +36,7 @@ Cartridge::Cartridge(const std::string &filename) {
 }
 
 uint8_t Cartridge::read(uint16_t addr) {
-    uint16_t mapped_address;
+    uint32_t mapped_address;
     bool rom_read;
 
     if (mbc->read(addr, mapped_address, rom_read)) {
@@ -51,7 +51,7 @@ uint8_t Cartridge::read(uint16_t addr) {
 }
 
 void Cartridge::write(uint16_t addr, uint8_t data) {
-    uint16_t mapped_address;
+    uint32_t mapped_address;
 
     // We need to call mbc->write because this might be a write to ROM
     // that alters the MBC state. If the MBC tells us that this is a write
