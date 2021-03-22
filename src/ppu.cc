@@ -112,7 +112,7 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
         return;
     }
 
-    std::vector<Pixel> fetched;
+    std::array<Pixel, 8> fetched;
     uint8_t scroll_x = read(SCX);
     uint8_t scroll_y = read(SCY);
 
@@ -131,19 +131,13 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
         uint8_t tile_id = read(tile_addr);
         fetchTileLine(tile_id, tile_line, fetched);
 
-        // Skip pixels based on SCX
-        if (skip_pixels) {
-            fetched.erase(fetched.begin() + skip_pixels - 1);
-            skip_pixels = 0;
-        }
-
         // Make sure we don't insert too many pixels
         uint8_t num_insert = std::min((uint8_t) fetched.size(), left_to_fetch);
 
         // Insert pixels
-        pixel_line.insert(pixel_line.end(), fetched.begin(), fetched.begin() + num_insert);
+        pixel_line.insert(pixel_line.end(), std::begin(fetched) + skip_pixels, std::begin(fetched) + num_insert);
+        skip_pixels = 0;
 
-        fetched.clear();
         tile_addr++;
         left_to_fetch = pixel_line.size() - num_pixels;
     }
@@ -152,7 +146,7 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
 void PPU::fetchWin(uint8_t line) {
 }
 
-void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &out) {
+void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::array<Pixel, 8> &out) {
     uint16_t addr;
     if (read(LCDC) & 0x10) {
         addr = 0x8000 + (tile_id * 0x10);
@@ -163,15 +157,19 @@ void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &
     addr += tile_line * 2;
     uint8_t low_color = read(addr);
     uint8_t high_color = read(addr + 1);
+
     for (uint8_t i = 0; i < 8; i++) {
         Pixel temp;
         temp.data = 0;
         temp.bgp = 1;
         temp.unlit = 0;
-        temp.color = (((low_color >> i) & 0x01) << 0) | 
-                     (((high_color >> i) & 0x01) << 1);
+        temp.color = ((low_color & 0x01) << 0) |
+                     ((high_color & 0x01) << 1);
 
-        out.insert(out.begin(), temp);
+        low_color >>= 1;
+        high_color >>= 1;
+
+        out[7 - i] = temp;
     }
 }
 

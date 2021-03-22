@@ -112,5 +112,5 @@ private:
     uint16_t getBGTilemapStart();
     uint16_t getWinTilemapStart();
 
-    void fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::vector<Pixel> &out);
+    void fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::array<Pixel, 8> &out);
 };

@@ -9,58 +9,92 @@
 
 SDLGameboyDriver::SDLGameboyDriver(std::string title) {
     SDL_Init(SDL_INIT_VIDEO);
-    window = nullptr;
-    renderer = nullptr;
 
-    SDL_CreateWindowAndRenderer(SCREEN_WIDTH * 2,
-                                SCREEN_HEIGHT * 2,
-                                SDL_WINDOW_OPENGL,
-                                &window,
-                                &renderer);
+    window = SDL_CreateWindow(title.c_str(), 
+                     SDL_WINDOWPOS_UNDEFINED,
+                     SDL_WINDOWPOS_UNDEFINED,
+                     SCREEN_WIDTH * 2,
+                     SCREEN_HEIGHT * 2,
+                     SDL_WINDOW_OPENGL);
 
-    SDL_SetWindowTitle(window, title.c_str());
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    texture = SDL_CreateTexture(renderer,
+                                SDL_PIXELFORMAT_ARGB8888,
+                                SDL_TEXTUREACCESS_STREAMING,
+                                SCREEN_WIDTH * 2,
+                                SCREEN_HEIGHT * 2);
+
+    // Lock texture so we're ready to start drawing pixels to it
+    int pitch;
+    SDL_LockTexture(texture, nullptr, (void **) &pixels, &pitch);
 
     time = std::chrono::steady_clock::now();
 }
 
 SDLGameboyDriver::~SDLGameboyDriver() {
+    SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
 
-void SDLGameboyDriver::setRendererDrawColor(COLOR color) {
+uint32_t SDLGameboyDriver::getARGBColor(COLOR color) {
+    uint8_t r, g, b;
     switch (color) {
         case WHITE:
-            SDL_SetRenderDrawColor(renderer, 155, 188, 15, 255);
+            r = 155;
+            g = 188;
+            b = 15;
             break;
         case LIGHT_GREEN:
-            SDL_SetRenderDrawColor(renderer, 139, 172, 15, 255);
+            r = 139;
+            g = 172;
+            b = 15;
             break;
         case DARK_GREEN:
-            SDL_SetRenderDrawColor(renderer, 48, 98, 48, 255);
+            r = 48;
+            g = 98;
+            b = 48;
             break;
         case BLACK:
-            SDL_SetRenderDrawColor(renderer, 15, 56, 15, 255);
+            r = 15;
+            g = 56;
+            b = 15;
             break;
         case UNLIT:
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            r = g = b = 255;
+            break;
     }
+
+    return (r << 16) | (g << 8) | (b << 0);
 }
 
 void SDLGameboyDriver::draw(COLOR color, uint8_t x, uint8_t y) {
+    uint8_t scale_factor = 2;
+    if (y > SCREEN_HEIGHT / 2 + 1) {
+        ;
+    }
     if (x < SCREEN_WIDTH && y < SCREEN_HEIGHT) {
-        setRendererDrawColor(color);
-        SDL_RenderDrawPoint(renderer, (2 * x), (2 * y));
-        SDL_RenderDrawPoint(renderer, (2 * x) + 1, (2 * y));
-        SDL_RenderDrawPoint(renderer, (2 * x), (2 * y) + 1);
-        SDL_RenderDrawPoint(renderer, (2 * x) + 1, (2 * y) + 1);
+        uint32_t argb_color = getARGBColor(color);
+        for (uint8_t y_disp = 0; y_disp < scale_factor; y_disp++) {
+            for (uint8_t x_disp = 0; x_disp < scale_factor; x_disp++) {
+                uint32_t i = ((x * scale_factor) + x_disp) + ((y * scale_factor) + y_disp) * (SCREEN_WIDTH * scale_factor);
+                pixels[i] = argb_color;
+            }
+        }
     }
 }
 
 void SDLGameboyDriver::render() {
+    SDL_UnlockTexture(texture);
+
+    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
     SDL_RenderPresent(renderer);
     SDL_RenderClear(renderer);
+
+    int pitch;
+    SDL_LockTexture(texture, nullptr, (void **) &pixels, &pitch);
     
     std::this_thread::sleep_until(time + std::chrono::milliseconds(17));
     time = std::chrono::steady_clock::now();

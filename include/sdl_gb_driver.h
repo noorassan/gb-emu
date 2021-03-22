@@ -24,12 +24,15 @@ class SDLGameboyDriver : public GameboyDriver {
         CONTROL pollControls() override;
     
     private:
-        void setRendererDrawColor(COLOR color);
+        uint32_t getARGBColor(COLOR color);
 
     private:
         SDL_Renderer *renderer;
         SDL_Window *window;
+        SDL_Texture *texture;
         SDL_Event event;
+
+        uint32_t *pixels;
 
         std::chrono::steady_clock::time_point time;
 };
