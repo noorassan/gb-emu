@@ -37,9 +37,14 @@ Cartridge::Cartridge(const std::string &filename) {
 
 uint8_t Cartridge::read(uint16_t addr) {
     uint16_t mapped_address;
+    bool rom_read;
 
-    if (mbc->read(addr, mapped_address)) {
-        return rom[mapped_address];
+    if (mbc->read(addr, mapped_address, rom_read)) {
+        if (rom_read) {
+            return rom[mapped_address];
+        } else {
+            return ram[mapped_address];
+        }
     }
 
     return 0;

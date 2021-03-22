@@ -7,16 +7,19 @@ MBC1::MBC1() {
     bank_specifier = 0;
 }
 
-bool MBC1::read(uint16_t addr, uint16_t &mapped_addr) {
+bool MBC1::read(uint16_t addr, uint16_t &mapped_addr, bool &rom_read) {
     if (addr >= 0x0000 && addr < 0x4000) {
         mapped_addr = addr;
+        rom_read = true;
         return true;
     } else if (addr >= 0x4000 && addr < 0x8000) {
         uint8_t bank = getROMBank();
+        rom_read = true;
         mapped_addr = addr + (bank - 1) * 0x4000;
         return true;
     } else if (addr >= 0xA000 && addr < 0xC000 && ram_enabled) {
         uint8_t bank = getRAMBank();
+        rom_read = false;
         mapped_addr = addr + (bank) * 0x2000;
         return true;
     }

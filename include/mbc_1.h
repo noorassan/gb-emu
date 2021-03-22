@@ -8,7 +8,7 @@ public:
     ~MBC1() = default;
 
 public:
-    bool read(uint16_t addr, uint16_t &mapped_addr) override;
+    bool read(uint16_t addr, uint16_t &mapped_addr, bool &rom_read) override;
     bool write(uint16_t addr, uint8_t data, uint16_t &mapped_addr) override;
 
     uint8_t getRAMBank();
