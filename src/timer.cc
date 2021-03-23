@@ -46,28 +46,32 @@ uint8_t Timer::getDIVBitPos() {
 }
 
 void Timer::write(uint16_t addr, uint8_t data) {
-    bus->timerWrite(addr, data);
+    bus->deviceWrite(addr, data);
 }
 
 uint8_t Timer::read(uint16_t addr) {
-    return bus->timerRead(addr);
+    return bus->deviceRead(addr);
 }
 
-void Timer::cpuWrite(uint16_t addr, uint8_t data) {
+bool Timer::regWrite(uint16_t addr, uint8_t data) {
     if (addr == DIV) {
         internal_div = 0;
         write(DIV, 0);
+        return true;
     } else if (addr == TIMA) {
         wait_cycles = 0;
         write(TIMA, 0);
+        return true;
     }
+
+    return false;
 }
 
-uint8_t Timer::cpuRead(uint16_t addr) {
-    return read(addr);
-}
+bool Timer::regRead(uint16_t addr, uint8_t &val) {
+    if (addr == DIV || addr == TIMA) {
+        val = read(addr);
+        return true;
+    }
 
-bool Timer::handlesAddr(uint16_t addr) {
-    return (addr == DIV) ||
-           (addr == TIMA);
+    return false;
 }

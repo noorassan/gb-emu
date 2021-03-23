@@ -265,8 +265,6 @@ uint8_t PPU::cpuRead(uint16_t addr) {
         if (!isPPUEnabled() || (status != OAM_SEARCH && status != PIXEL_TRANSFER)) {
             return oam[addr & 0x01FF];
         }
-    } else if (addr == LY) {
-        return read(LY);
     }
 
     return 0xFF;
@@ -283,14 +281,20 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data) {
         if (!isPPUEnabled() || (status != OAM_SEARCH && status != PIXEL_TRANSFER)) {
             oam[addr & 0x01FF] = data;
         }
-    } else if (addr == LY) {
-        // all writes to LY reset the register
-        write(LY, 0);
     }
 }
 
-bool PPU::handlesAddr(uint16_t addr) {
-    return (addr == LY);
+bool PPU::regRead(uint16_t addr, uint8_t &val) {
+    return false;
+}
+
+bool PPU::regWrite(uint16_t addr, uint8_t data) {
+    if (addr == LY) {
+        write(LY, 0);
+        return true;
+    }
+
+    return false;
 }
 
 uint8_t PPU::read(uint16_t addr) {
@@ -299,7 +303,7 @@ uint8_t PPU::read(uint16_t addr) {
     } else if (addr >= 0xFE00 && addr < 0xFEA0) {
         return oam[addr & 0x01FF];
     } else {
-        return bus->ppuRead(addr);
+        return bus->deviceRead(addr);
     }
 }
 
@@ -309,7 +313,7 @@ void PPU::write(uint16_t addr, uint8_t data) {
     } else if (addr >= 0xFE00 && addr < 0xFEA0) {
         oam[addr & 0x00FF] = data;
      } else {
-        bus->ppuWrite(addr, data);
+        bus->deviceWrite(addr, data);
      }
 }
 

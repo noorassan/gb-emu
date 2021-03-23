@@ -20,8 +20,12 @@ class SDLGameboyDriver : public GameboyDriver {
         // Render the screen and wait for the rest of the frame
         void render() override;
 
+        // Return true if a QUIT input has been received
+        bool quitReceived() override;
+
         // Get control inputs
-        CONTROL pollControls() override;
+        // Returns a union of CONTROLs
+        uint8_t pollControls(uint8_t p1) override;
     
     private:
         uint32_t getARGBColor(COLOR color);

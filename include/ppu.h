@@ -33,10 +33,13 @@ public:
     ~PPU() = default;
 
 public:
-    // Handle reads and writes coming from the CPU
-    uint8_t cpuRead(uint16_t addr);
+    // Handles reads and writes coming from the CPU accessing VRAM & OAM
     void cpuWrite(uint16_t addr, uint8_t data);
-    bool handlesAddr(uint16_t addr);
+    uint8_t cpuRead(uint16_t addr);
+
+    // Handles reads/writes to PPU high ram registers
+    bool regWrite(uint16_t addr, uint8_t data);
+    bool regRead(uint16_t addr, uint8_t &val);
 
     void reset();
     void clock(uint8_t clocks);

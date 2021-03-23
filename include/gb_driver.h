@@ -3,10 +3,11 @@
 #include <cstdint>
 
 #include "color.h"
-#include "controls.h"
+#include "control.h"
 
 class GameboyDriver {
     public:
+        GameboyDriver() = default;
         virtual ~GameboyDriver() = default;
 
     public:
@@ -16,6 +17,13 @@ class GameboyDriver {
         // Render the screen and wait for the rest of the frame
         virtual void render() = 0;
 
+        // Return true if a QUIT input has been received
+        virtual bool quitReceived() = 0;
+
         // Get control inputs
-        virtual CONTROL pollControls() = 0;
+        // Returns a union of CONTROLs
+        virtual uint8_t pollControls(uint8_t p1) = 0;
+
+    protected:
+        bool quit;
 };

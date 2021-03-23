@@ -20,11 +20,9 @@ public:
     void connectBus(Bus *bus);
     void clock(uint8_t cycles);
 
-    void cpuWrite(uint16_t addr, uint8_t data);
-    uint8_t cpuRead(uint16_t addr);
-
-    // Returns true if a r/w  to addr should be handled by the timer
-    bool handlesAddr(uint16_t addr);
+    // Returns true if a r/w  to addr is handled by the timer
+    bool regWrite(uint16_t addr, uint8_t data);
+    bool regRead(uint16_t addr, uint8_t &val);
 
 private:
     void write(uint16_t addr, uint8_t data);

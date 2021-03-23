@@ -1,13 +1,12 @@
 #include <thread>
 
 #include "bus.h"
-#include "controls.h"
 #include "sdl_gb_driver.h"
 
 #define SCREEN_WIDTH 160
 #define SCREEN_HEIGHT 144
 
-SDLGameboyDriver::SDLGameboyDriver(std::string title) {
+SDLGameboyDriver::SDLGameboyDriver(std::string title) : GameboyDriver() {
     SDL_Init(SDL_INIT_VIDEO);
 
     window = SDL_CreateWindow(title.c_str(), 
@@ -30,6 +29,7 @@ SDLGameboyDriver::SDLGameboyDriver(std::string title) {
     SDL_LockTexture(texture, nullptr, (void **) &pixels, &pitch);
 
     time = std::chrono::steady_clock::now();
+    quit = false;
 }
 
 SDLGameboyDriver::~SDLGameboyDriver() {
@@ -100,13 +100,49 @@ void SDLGameboyDriver::render() {
     time = std::chrono::steady_clock::now();
 }
 
-CONTROL SDLGameboyDriver::pollControls() {
-    SDL_PollEvent(&event);
-    if (event.type == SDL_QUIT) {
-        return QUIT;
+bool SDLGameboyDriver::quitReceived() {
+    return quit;
+}
+
+uint8_t SDLGameboyDriver::pollControls(uint8_t p1) {
+    uint8_t ret = 0;
+    bool p15 = p1 & 0x20;
+    bool p14 = p1 & 0x10;
+
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            quit = true;
+            return 0;
+        } else if (event.type ==  SDL_KEYDOWN) {
+            if (p15) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_x:
+                        ret |= CONTROL::P10;
+                    case SDLK_z:
+                        ret |= CONTROL::P11;
+                    case SDLK_BACKSPACE:
+                        ret |= CONTROL::P12;
+                    case SDLK_RETURN:
+                        ret |= CONTROL::P13;
+                }
+            }
+
+            if (p14) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_RIGHT:
+                        ret |= CONTROL::P10;
+                    case SDLK_LEFT:
+                        ret |= CONTROL::P11;
+                    case SDLK_UP:
+                        ret |= CONTROL::P12;
+                    case SDLK_DOWN:
+                        ret |= CONTROL::P13;
+                }
+            }
+        }
     }
 
-    return NONE;
+    return ret;
 }
 
 
