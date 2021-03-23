@@ -1,11 +1,10 @@
 #include <fstream>
 #include <vector>
 #include <cstdint>
-#include <memory>
 
 #include "cartridge.h"
-#include "no_mbc.h"
 #include "mbc_1.h"
+#include "no_mbc.h"
 
 
 Cartridge::Cartridge(const std::string &filename) {

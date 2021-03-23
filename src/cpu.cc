@@ -2,8 +2,8 @@
 #include <cstdint>
 #include <stdexcept>
 
-#include "cpu.h"
 #include "bus.h"
+#include "cpu.h"
 
 #define DR_16(X) (*(uint16_t *) X)
 #define DR_8(X) (*(uint8_t *) X)

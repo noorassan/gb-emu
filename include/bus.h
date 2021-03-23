@@ -1,18 +1,17 @@
 #pragma once
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <memory>
 
 #include "cartridge.h"
 #include "controls.h"
 #include "cpu.h"
-#include "ppu.h"
-#include "interrupt.h"
-#include "timer.h"
 #include "gb_driver.h"
+#include "interrupt.h"
+#include "ppu.h"
+#include "timer.h"
 
-#define KB 1024
 #define POLL_INTERVAL 210672
 
 

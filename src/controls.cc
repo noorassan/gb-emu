@@ -1,5 +1,5 @@
-#include "controls.h"
 #include "bus.h"
+#include "controls.h"
 
 Controls::Controls(GameboyDriver *driver) {
     this->driver = driver;

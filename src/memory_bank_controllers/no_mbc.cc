@@ -1,7 +1,4 @@
-#include <cstdint>
-
 #include "no_mbc.h"
-
 
 bool NoMBC::read(uint16_t addr, uint32_t &mapped_addr, bool &rom_read) {
     if (addr >= 0x0000 && addr < 0x8000) {

@@ -2,7 +2,6 @@
 
 #include "bus.h"
 
-
 Bus::Bus(GameboyDriver *driver) : ppu(driver), controls(driver) {
     this->driver = driver;
 

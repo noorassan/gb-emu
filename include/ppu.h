@@ -5,11 +5,6 @@
 
 #include "gb_driver.h"
 
-#define SCREEN_WIDTH 160
-#define SCREEN_HEIGHT 144
-
-#define KB 1024
-
 // Important PPU ram locations
 #define LCDC 0xFF40
 #define STAT 0xFF41
@@ -25,6 +20,7 @@
 #define WX 0xFF4B
 
 class Bus;
+
 
 class PPU {
 public:

@@ -1,10 +1,5 @@
-#include <thread>
-
 #include "bus.h"
 #include "sdl_gb_driver.h"
-
-#define SCREEN_WIDTH 160
-#define SCREEN_HEIGHT 144
 
 SDLGameboyDriver::SDLGameboyDriver(std::string title) : GameboyDriver() {
     SDL_Init(SDL_INIT_VIDEO);

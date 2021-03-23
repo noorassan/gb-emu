@@ -1,9 +1,6 @@
 #include "bus.h"
-#include "ppu.h"
 #include "interrupt.h"
-
-#include <iostream>
-
+#include "ppu.h"
 
 PPU::PPU(GameboyDriver *driver) {
     this->driver = driver;

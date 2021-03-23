@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+
+
 class MemoryBankController {
 public:
     virtual ~MemoryBankController() = default;

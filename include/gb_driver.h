@@ -5,6 +5,10 @@
 #include "color.h"
 #include "control.h"
 
+#define SCREEN_WIDTH 160
+#define SCREEN_HEIGHT 144
+
+
 class GameboyDriver {
     public:
         GameboyDriver() = default;

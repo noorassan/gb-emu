@@ -1,5 +1,7 @@
 #pragma once
+
 #include <cstdint>
+
 #include "gb_driver.h"
 
 #define P1 0xFF00

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
+#include <thread>
 
 #include <SDL.h>
 
