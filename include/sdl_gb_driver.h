@@ -26,7 +26,7 @@ class SDLGameboyDriver : public GameboyDriver {
 
         // Get control inputs
         // Returns a union of CONTROLs
-        uint8_t pollControls(uint8_t p1) override;
+        uint8_t pollControls() override;
     
     private:
         uint32_t getARGBColor(COLOR color);

@@ -26,7 +26,7 @@ class GameboyDriver {
 
         // Get control inputs
         // Returns a union of CONTROLs
-        virtual uint8_t pollControls(uint8_t p1) = 0;
+        virtual uint8_t pollControls() = 0;
 
     protected:
         bool quit;

@@ -106,6 +106,9 @@ void Bus::run() {
     uint32_t cycles;
 
     while(!driver->quitReceived()) {
+        // Poll controls for a quit
+        controls.pollControls();
+
         cycles = 0;
         while (cycles <= POLL_INTERVAL) {
             uint8_t elapsed = cpu.clock();
