@@ -31,6 +31,7 @@ void PPU::clock(uint8_t clocks) {
                     setStatus(V_BLANK);
                     bus->requestInterrupt(INTERRUPT::V_BLANK);
                 } else {
+                    searchOAM(line + 1);
                     setStatus(OAM_SEARCH);
                 }
 
@@ -45,6 +46,7 @@ void PPU::clock(uint8_t clocks) {
                 uint8_t line = read(LY);
                 if (line == 153) {
                     this->driver->render();
+                    searchOAM(line + 1);
                     setStatus(OAM_SEARCH);
                     write(LY, 0);
                 } else {
@@ -76,7 +78,31 @@ void PPU::clock(uint8_t clocks) {
     }
 }
 
+void PPU::searchOAM(uint8_t line) {
+    sprites.clear();
+
+    uint16_t addr = OAM_START;
+    uint8_t obj_height = getOBJHeight();
+
+    while ((sprites.size() < 10) && (addr < OAM_END)) {
+        Sprite sprite;
+        sprite.pos_y    = read(addr);
+        sprite.pos_x    = read(addr + 1);
+        sprite.tile_num = read(addr + 2);
+        sprite.flags    = read(addr + 3);
+
+        if (((sprite.pos_y - 16) <= line) && ((sprite.pos_y - 16 + obj_height) >= line)) {
+            sprites.push_back(sprite);
+        }
+
+        addr += 4;
+    }
+
+}
+
 void PPU::fetchLine() {
+    pixel_line.clear();
+
     // TODO: More accurate transfer cycle emulation
     transfer_cycles = 172;
 
@@ -87,12 +113,12 @@ void PPU::fetchLine() {
     // Fetch more or less BG pixels based on window
     if (isWinEnabled() && (line >= win_y) && (win_x <= SCREEN_WIDTH)) {
         fetchBG(line, win_x);
-        //fetchWin();
+        fetchWin((line - win_y), (SCREEN_WIDTH - win_x));
     } else {
         fetchBG(line, SCREEN_WIDTH);
     }
 
-    //fetchOBJ();
+    fetchOBJ(line);
 }
 
 void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
@@ -123,24 +149,79 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
     uint8_t tile_line = (scroll_y + line) % 8;
     uint16_t tile_addr = getBGTilemapStart() + tile_x + tile_y * 0x20;
 
-    uint8_t left_to_fetch = num_pixels - pixel_line.size();
-    while (left_to_fetch > 0) {
+    while (num_pixels > 0) {
         uint8_t tile_id = read(tile_addr);
         fetchTileLine(tile_id, tile_line, fetched);
 
         // Make sure we don't insert too many pixels
-        uint8_t num_insert = std::min((uint8_t) fetched.size(), left_to_fetch);
+        uint8_t num_insert = std::min((uint8_t) 8 , num_pixels);
 
         // Insert pixels
         pixel_line.insert(pixel_line.end(), std::begin(fetched) + skip_pixels, std::begin(fetched) + num_insert);
         skip_pixels = 0;
 
         tile_addr++;
-        left_to_fetch = pixel_line.size() - num_pixels;
+        num_pixels -= num_insert;
     }
 }
 
-void PPU::fetchWin(uint8_t line) {
+void PPU::fetchWin(uint8_t win_line, uint8_t num_pixels) {
+    if (!isWinEnabled()) {
+        Pixel pixel;
+        pixel.data = 0;
+        pixel.unlit = 1;
+
+        while(pixel_line.size() < num_pixels) {
+            pixel_line.push_back(pixel);
+        }
+
+        return;
+    }
+
+    std::array<Pixel, 8> fetched;
+    uint8_t tile_y = (win_line / 8) & 0x1F;
+
+    uint8_t tile_line = win_line % 8;
+    uint16_t tile_addr = getWinTilemapStart() + tile_y * 0x20;
+
+    while (num_pixels > 0) {
+        uint8_t tile_id = read(tile_addr);
+        fetchTileLine(tile_id, tile_line, fetched);
+
+        // Make sure we don't insert too many pixels
+        uint8_t num_insert = std::min((uint8_t) 8, num_pixels);
+
+        // Insert pixels
+        pixel_line.insert(pixel_line.end(), std::begin(fetched), std::begin(fetched) + num_insert);
+
+        tile_addr++;
+        num_pixels -= num_insert;
+    }
+
+}
+
+void PPU::fetchOBJ(uint8_t line) {
+    if (!isOBJEnabled()) {
+        return;
+    }
+
+    // Sprites with smaller x position will overwrite those with a larger x,
+    // so we add them to the line from right to left
+    std::sort(sprites.begin(), sprites.end(), std::greater());
+
+    std::array<Pixel, 8> fetched;
+    for (const auto &sprite : sprites) {
+        fetchOBJLine(sprite, line, fetched);
+
+        for (uint8_t i = 0; i < 8; i++) {
+            uint8_t x = sprite.pos_x - 8 + i;
+
+            if ((x > 0 && x < SCREEN_WIDTH) && fetched[i].color != 0 && 
+                (pixel_line[x].color == 0 || (~sprite.flags & 0x80))) {
+                pixel_line[x] = fetched[i];
+            }
+        }
+    }
 }
 
 void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::array<Pixel, 8> &out) {
@@ -152,19 +233,60 @@ void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::array<Pixel, 8>
     }
 
     addr += tile_line * 2;
-    uint8_t low_color = read(addr);
-    uint8_t high_color = read(addr + 1);
+    uint8_t low_byte = read(addr);
+    uint8_t high_byte = read(addr + 1);
 
+    decodePixels(low_byte, high_byte, out);
+    for (auto &pixel : out) {
+        pixel.bgp = 1;
+    }
+}
+
+void PPU::fetchOBJLine(const Sprite &sprite, uint8_t curr_line, std::array<Pixel, 8> &out) {
+    uint8_t obj_height = getOBJHeight();
+    uint8_t adjusted_tile_num = sprite.tile_num;
+
+    if (obj_height == 16) {
+        adjusted_tile_num >>= 1;
+    }
+
+    uint16_t addr = 0x8000 + adjusted_tile_num * obj_height * 2;
+    uint8_t sprite_line = (curr_line - (sprite.pos_y - 16));
+
+    // If sprite is vertically flipped
+    if (sprite.flags & 0x40) {
+        sprite_line = obj_height - sprite_line;
+    }
+
+    addr += sprite_line * 2;
+    uint8_t low_byte = read(addr);
+    uint8_t high_byte = read(addr + 1);
+
+    decodePixels(low_byte, high_byte, out);
+    for (auto &pixel : out) {
+        if (sprite.flags & 0x10) {
+            pixel.obp1 = 1;
+        } else {
+            pixel.obp0 = 1;
+        }
+    }
+
+    // If sprite is horizontally flipped
+    if (sprite.flags & 0x20) {
+        std::reverse(std::begin(out), std::end(out));
+    }
+}
+
+void PPU::decodePixels(uint8_t low_byte, uint8_t high_byte, std::array<Pixel, 8> &out) {
     for (uint8_t i = 0; i < 8; i++) {
         Pixel temp;
         temp.data = 0;
-        temp.bgp = 1;
         temp.unlit = 0;
-        temp.color = ((low_color & 0x01) << 0) |
-                     ((high_color & 0x01) << 1);
+        temp.color = ((low_byte & 0x01) << 0) |
+                     ((high_byte & 0x01) << 1);
 
-        low_color >>= 1;
-        high_color >>= 1;
+        low_byte >>= 1;
+        high_byte >>= 1;
 
         out[7 - i] = temp;
     }
@@ -198,7 +320,6 @@ void PPU::drawLine() {
         this->driver->draw(color, x, line);
     }
 
-    pixel_line.clear();
 }
 
 void PPU::statInterrupt() {
@@ -223,6 +344,14 @@ uint16_t PPU::getWinTilemapStart() {
         return 0x9C00;
     } else {
         return 0x9800;
+    }
+}
+
+uint8_t PPU:: getOBJHeight() {
+    if (read(LCDC) & 0x04) {
+        return 16;
+    } else {
+        return 8;
     }
 }
 

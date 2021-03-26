@@ -35,7 +35,10 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
         if (controls.regWrite(addr, data)) {
             return;
         }
-        
+        if (handleDMA(addr, data)) {
+            return;
+        }
+
         zero_page_ram[addr & 0x00FF] = data;
     } 
 }
@@ -122,4 +125,17 @@ void Bus::run() {
 
 void Bus::insertCartridge(const std::shared_ptr<Cartridge> cart) {
     this->cart = cart;
+}
+
+bool Bus::handleDMA(uint16_t addr, uint8_t data) {
+    if (addr != 0xFF46) {
+        return false;
+    }
+
+    uint16_t dma_addr = data << 8;
+    for (uint8_t i = 0; i < OAM_SIZE; i++) {
+        cpuWrite(OAM_START + i, cpuRead(dma_addr + i));
+    }
+
+    return true;
 }

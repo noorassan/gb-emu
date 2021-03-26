@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "gb_driver.h"
+#include "sprite.h"
 
 // Important PPU ram locations
 #define LCDC 0xFF40
@@ -18,6 +19,9 @@
 #define OBP1 0xFF49
 #define WY 0xFF4A
 #define WX 0xFF4B
+#define OAM_START 0xFE00
+#define OAM_END 0xFEA0
+#define OAM_SIZE 0xA0
 
 class Bus;
 
@@ -61,12 +65,6 @@ private:
         uint8_t data;
     } Pixel;
 
-    typedef struct {
-        uint8_t pos_y, pos_x;
-        uint8_t tile_num;
-        uint8_t flags;
-    } Sprite;
-
 private:
     uint32_t cycles;
 
@@ -75,10 +73,10 @@ private:
     uint32_t transfer_cycles;
 
     std::array<uint8_t, 8 * KB> vram;
-    std::array<uint8_t, 160> oam;
+    std::array<uint8_t, OAM_SIZE> oam;
 
     std::vector<Pixel> pixel_line;
-    std::array<Sprite, 10> sprites;
+    std::vector<Sprite> sprites;
 
     Bus *bus;
     GameboyDriver *driver;
@@ -96,12 +94,18 @@ private:
     bool isBGEnabled();
     bool isOBJEnabled();
 
+    void searchOAM(uint8_t line);
+
     void fetchLine();
 
     // Fetches the first num_pixels pixels of the bg for line
     void fetchBG(uint8_t line, uint8_t num_pixels);
-    void fetchWin(uint8_t line);
-    void fetchOBJ();
+
+    // Fetched the first num_pixels pixels of the window for line
+    void fetchWin(uint8_t win_line, uint8_t num_pixels);
+
+    // Overlay sprites onto current line of pixels
+    void fetchOBJ(uint8_t line);
 
     void drawLine();
 
@@ -110,6 +114,9 @@ private:
 
     uint16_t getBGTilemapStart();
     uint16_t getWinTilemapStart();
+    uint8_t getOBJHeight();
 
     void fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::array<Pixel, 8> &out);
+    void fetchOBJLine(const Sprite &sprite, uint8_t curr_line, std::array<Pixel, 8> &out);
+    void decodePixels(uint8_t low_byte, uint8_t high_byte, std::array<Pixel, 8> &out);
 };

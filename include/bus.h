@@ -45,6 +45,9 @@ public:
     void reset();
 
     void run();
-    
+
     void insertCartridge(const std::shared_ptr<Cartridge> cart);
+
+private:
+    bool handleDMA(uint16_t addr, uint8_t data);
 };
