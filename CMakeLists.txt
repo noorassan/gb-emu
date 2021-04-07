@@ -13,7 +13,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 include_directories(include)
 
 # Bring in source code
-file(GLOB SOURCES "src/*.cc" "src/memory_bank_controllers/*.cc")
+file(GLOB SOURCES "src/*.cc" "src/mbc/*.cc")
 
 # SDL Graphics Library
 find_package(SDL2 REQUIRED)

@@ -12,10 +12,10 @@ public:
     bool read(uint16_t addr, uint32_t &mapped_addr, bool &rom_read) override;
     bool write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) override;
 
+private:
     uint8_t getRAMBank();
     uint8_t getROMBank();
 
-private:
     // Specified by write to 0x0000-0x1FFFF
     // 0xXA enables (X doesn't matter). Anything else disables
     bool ram_enabled;
