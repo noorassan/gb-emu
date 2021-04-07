@@ -23,7 +23,7 @@ public:
     void connectBus(Bus *bus);
 
     // Updates P1 register based on controller inputs
-    void pollControls();
+    void updateControls();
 
 private:
     Bus *bus;

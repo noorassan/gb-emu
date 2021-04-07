@@ -67,9 +67,6 @@ uint32_t SDLGameboyDriver::getARGBColor(COLOR color) {
 
 void SDLGameboyDriver::draw(COLOR color, uint8_t x, uint8_t y) {
     uint8_t scale_factor = 2;
-    if (y > SCREEN_HEIGHT / 2 + 1) {
-        ;
-    }
     if (x < SCREEN_WIDTH && y < SCREEN_HEIGHT) {
         uint32_t argb_color = getARGBColor(color);
         for (uint8_t y_disp = 0; y_disp < scale_factor; y_disp++) {
@@ -99,44 +96,50 @@ bool SDLGameboyDriver::quitReceived() {
     return quit;
 }
 
-uint8_t SDLGameboyDriver::pollControls() {
-    uint8_t ret = 0;
-
+uint8_t SDLGameboyDriver::updateControls(uint8_t controls) {
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             quit = true;
             return 0;
-        } else if (event.type == SDL_KEYDOWN) {
+        } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+            uint8_t key;
+
             switch (event.key.keysym.sym) {
                 case SDLK_x:
-                    ret |= CONTROL::A;
+                    key = CONTROL::A;
                     break;
                 case SDLK_z:
-                    ret |= CONTROL::B;
+                    key = CONTROL::B;
                     break;
                 case SDLK_BACKSPACE:
-                    ret |= CONTROL::SELECT;
+                    key = CONTROL::SELECT;
                     break;
                 case SDLK_RETURN:
-                    ret |= CONTROL::START;
+                    key = CONTROL::START;
                     break;
                 case SDLK_RIGHT:
-                    ret |= CONTROL::RIGHT;
+                    key = CONTROL::RIGHT;
                     break;
                 case SDLK_LEFT:
-                    ret |= CONTROL::LEFT;
+                    key = CONTROL::LEFT;
                     break;
                 case SDLK_UP:
-                    ret |= CONTROL::UP;
+                    key = CONTROL::UP;
                     break;
                 case SDLK_DOWN:
-                    ret |= CONTROL::DOWN;
+                    key = CONTROL::DOWN;
                     break;
+            }
+
+            if (event.type == SDL_KEYDOWN) {
+                controls |= key;
+            } else {
+                controls &= ~key;
             }
         }
     }
 
-    return ret;
+    return controls;
 }
 
 

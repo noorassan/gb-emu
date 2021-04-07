@@ -9,7 +9,7 @@ Controls::Controls(GameboyDriver *driver) {
 #include <iostream>
 bool Controls::regRead(uint16_t addr, uint8_t &val) {
     if (addr == P1) {
-        pollControls();
+        updateControls();
 
         uint8_t p1 = read(P1);
         val = 0;
@@ -36,27 +36,14 @@ bool Controls::regRead(uint16_t addr, uint8_t &val) {
 bool Controls::regWrite(uint16_t addr, uint8_t data) {
     if (addr == P1) {
         write(addr, data);
-
-        if (~data & 0x10) {
-            // Direction buttons selected
-            pressed &= 0xF0;
-        }
-
-        if (~data & 0x20) {
-            // Action buttons selected
-            pressed &= 0x0F;
-        }
-
         return true;
     }
 
     return false;
 }
 
-void Controls::pollControls() {
-    uint8_t inputs = driver->pollControls();
-
-    uint8_t new_pressed = pressed | inputs;
+void Controls::updateControls() {
+    uint8_t new_pressed = driver->updateControls(pressed);
 
     // Joypad interrupt triggered on input
     if (new_pressed != pressed) {

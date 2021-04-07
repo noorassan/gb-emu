@@ -110,7 +110,7 @@ void Bus::run() {
 
     while(!driver->quitReceived()) {
         // Poll controls for a quit
-        controls.pollControls();
+        controls.updateControls();
 
         cycles = 0;
         while (cycles <= POLL_INTERVAL) {

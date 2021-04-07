@@ -24,9 +24,9 @@ class SDLGameboyDriver : public GameboyDriver {
         // Return true if a QUIT input has been received
         bool quitReceived() override;
 
-        // Get control inputs
+        // Update pressed keys based on controls inputs
         // Returns a union of CONTROLs
-        uint8_t pollControls() override;
+        uint8_t updateControls(uint8_t controls) override;
     
     private:
         uint32_t getARGBColor(COLOR color);

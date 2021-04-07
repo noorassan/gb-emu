@@ -24,9 +24,9 @@ class GameboyDriver {
         // Return true if a QUIT input has been received
         virtual bool quitReceived() = 0;
 
-        // Get control inputs
+        // Update pressed keys based on controls inputs
         // Returns a union of CONTROLs
-        virtual uint8_t pollControls() = 0;
+        virtual uint8_t updateControls(uint8_t controls) = 0;
 
     protected:
         bool quit;
