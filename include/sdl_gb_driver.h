@@ -24,9 +24,8 @@ class SDLGameboyDriver : public GameboyDriver {
         // Return true if a QUIT input has been received
         bool quitReceived() override;
 
-        // Update pressed keys based on controls inputs
-        // Returns a union of CONTROLs
-        uint8_t updateControls(uint8_t controls) override;
+        // Returns a ControllerState representing currently pressed controls
+        virtual ControllerState pollControls() override;
     
     private:
         uint32_t getARGBColor(COLOR color);
@@ -37,6 +36,7 @@ class SDLGameboyDriver : public GameboyDriver {
         SDL_Texture *texture;
         SDL_Event event;
 
+        const uint8_t *keyboard_state;
         uint32_t *pixels;
 
         std::chrono::steady_clock::time_point time;

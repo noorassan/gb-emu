@@ -19,8 +19,11 @@ SDLGameboyDriver::SDLGameboyDriver(std::string title) : GameboyDriver() {
                                 SCREEN_WIDTH * 2,
                                 SCREEN_HEIGHT * 2);
 
+    int32_t num_keys;
+    keyboard_state = SDL_GetKeyboardState(&num_keys);
+
     // Lock texture so we're ready to start drawing pixels to it
-    int pitch;
+    int32_t pitch;
     SDL_LockTexture(texture, nullptr, (void **) &pixels, &pitch);
 
     time = std::chrono::steady_clock::now();
@@ -96,48 +99,23 @@ bool SDLGameboyDriver::quitReceived() {
     return quit;
 }
 
-uint8_t SDLGameboyDriver::updateControls(uint8_t controls) {
+ControllerState SDLGameboyDriver::pollControls() {
+    ControllerState controls;
+
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             quit = true;
-            return 0;
-        } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
-            uint8_t key;
-
-            switch (event.key.keysym.sym) {
-                case SDLK_x:
-                    key = CONTROL::A;
-                    break;
-                case SDLK_z:
-                    key = CONTROL::B;
-                    break;
-                case SDLK_BACKSPACE:
-                    key = CONTROL::SELECT;
-                    break;
-                case SDLK_RETURN:
-                    key = CONTROL::START;
-                    break;
-                case SDLK_RIGHT:
-                    key = CONTROL::RIGHT;
-                    break;
-                case SDLK_LEFT:
-                    key = CONTROL::LEFT;
-                    break;
-                case SDLK_UP:
-                    key = CONTROL::UP;
-                    break;
-                case SDLK_DOWN:
-                    key = CONTROL::DOWN;
-                    break;
-            }
-
-            if (event.type == SDL_KEYDOWN) {
-                controls |= key;
-            } else {
-                controls &= ~key;
-            }
         }
     }
+
+    controls.a      = keyboard_state[SDL_SCANCODE_X];
+    controls.b      = keyboard_state[SDL_SCANCODE_Z];
+    controls.select = keyboard_state[SDL_SCANCODE_BACKSPACE];
+    controls.start  = keyboard_state[SDL_SCANCODE_RETURN];
+    controls.right  = keyboard_state[SDL_SCANCODE_RIGHT];
+    controls.left   = keyboard_state[SDL_SCANCODE_LEFT];
+    controls.up     = keyboard_state[SDL_SCANCODE_UP];
+    controls.down   = keyboard_state[SDL_SCANCODE_DOWN];
 
     return controls;
 }

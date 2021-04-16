@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "color.h"
-#include "control.h"
+#include "controller_state.h"
 
 #define SCREEN_WIDTH 160
 #define SCREEN_HEIGHT 144
@@ -24,9 +24,8 @@ class GameboyDriver {
         // Return true if a QUIT input has been received
         virtual bool quitReceived() = 0;
 
-        // Update pressed keys based on controls inputs
-        // Returns a union of CONTROLs
-        virtual uint8_t updateControls(uint8_t controls) = 0;
+        // Returns a ControllerState representing currently pressed controls
+        virtual ControllerState pollControls() = 0;
 
     protected:
         bool quit;
