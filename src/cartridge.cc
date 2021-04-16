@@ -4,7 +4,7 @@
 
 #include "cartridge.h"
 #include "mbc/mbc_1.h"
-//#include "mbc/mbc_3.h"
+#include "mbc/mbc_3.h"
 #include "mbc/no_mbc.h"
 
 
@@ -114,8 +114,8 @@ void Cartridge::setMBC() {
         mbc = std::make_shared<NoMBC>();
     } else if (mbc_type >= 0x01 && mbc_type <= 0x03){
         mbc = std::make_shared<MBC1>();
-    //} else if (mbc_type >= 0x0F && mbc_type <= 0x13) {
-    //   mbc = std::make_shared<MBC3>();
+    } else if (mbc_type >= 0x0F && mbc_type <= 0x13) {
+       mbc = std::make_shared<MBC3>();
     } else {
         throw std::invalid_argument("Invalid Memory Bank Controller type read from cartridge.");
     }
