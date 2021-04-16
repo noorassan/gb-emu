@@ -154,10 +154,13 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
         fetchTileLine(tile_id, tile_line, fetched);
 
         // Make sure we don't insert too many pixels
-        uint8_t num_insert = std::min((uint8_t) 8 , num_pixels);
+        uint8_t num_insert = std::min((uint8_t) 8, num_pixels) - skip_pixels;
 
         // Insert pixels
-        pixel_line.insert(pixel_line.end(), std::begin(fetched) + skip_pixels, std::begin(fetched) + num_insert);
+        pixel_line.insert(pixel_line.end(),
+                          std::begin(fetched) + skip_pixels,
+                          std::begin(fetched) + skip_pixels + num_insert);
+
         skip_pixels = 0;
 
         tile_addr++;
@@ -166,18 +169,6 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
 }
 
 void PPU::fetchWin(uint8_t win_line, uint8_t num_pixels) {
-    if (!isWinEnabled()) {
-        Pixel pixel;
-        pixel.data = 0;
-        pixel.unlit = 1;
-
-        while(pixel_line.size() < num_pixels) {
-            pixel_line.push_back(pixel);
-        }
-
-        return;
-    }
-
     std::array<Pixel, 8> fetched;
     uint8_t tile_y = (win_line / 8) & 0x1F;
 
@@ -197,7 +188,6 @@ void PPU::fetchWin(uint8_t win_line, uint8_t num_pixels) {
         tile_addr++;
         num_pixels -= num_insert;
     }
-
 }
 
 void PPU::fetchOBJ(uint8_t line) {
@@ -319,7 +309,6 @@ void PPU::drawLine() {
 
         this->driver->draw(color, x, line);
     }
-
 }
 
 void PPU::statInterrupt() {
