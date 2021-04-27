@@ -147,9 +147,10 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
 
     // Which line of the tiles we're fetching
     uint8_t tile_line = (scroll_y + line) % 8;
-    uint16_t tile_addr = getBGTilemapStart() + tile_x + tile_y * 0x20;
+    uint16_t line_start = getBGTilemapStart() + tile_y * 0x20;
 
     while (num_pixels > 0) {
+        uint16_t tile_addr = line_start + tile_x;
         uint8_t tile_id = read(tile_addr);
         fetchTileLine(tile_id, tile_line, fetched);
 
@@ -163,19 +164,21 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
 
         skip_pixels = 0;
 
-        tile_addr++;
+        tile_x = (tile_x + 1) & 0x1F;
         num_pixels -= num_insert;
     }
 }
 
 void PPU::fetchWin(uint8_t win_line, uint8_t num_pixels) {
     std::array<Pixel, 8> fetched;
+    uint8_t tile_x = 0;
     uint8_t tile_y = (win_line / 8) & 0x1F;
 
     uint8_t tile_line = win_line % 8;
-    uint16_t tile_addr = getWinTilemapStart() + tile_y * 0x20;
+    uint16_t line_start = getWinTilemapStart() + tile_y * 0x20;
 
     while (num_pixels > 0) {
+        uint16_t tile_addr = line_start + tile_x;
         uint8_t tile_id = read(tile_addr);
         fetchTileLine(tile_id, tile_line, fetched);
 
@@ -185,7 +188,7 @@ void PPU::fetchWin(uint8_t win_line, uint8_t num_pixels) {
         // Insert pixels
         pixel_line.insert(pixel_line.end(), std::begin(fetched), std::begin(fetched) + num_insert);
 
-        tile_addr++;
+        tile_x = (tile_x + 1) % 0x1F;
         num_pixels -= num_insert;
     }
 }
