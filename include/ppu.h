@@ -108,9 +108,8 @@ private:
     void fetchOBJ(uint8_t line);
 
     void drawLine();
-
-    void clockPixelFIFO();
-    void statInterrupt();
+    
+    void checkSTATInterrupt();
 
     uint16_t getBGTilemapStart();
     uint16_t getWinTilemapStart();

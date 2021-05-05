@@ -76,6 +76,8 @@ void PPU::clock(uint8_t clocks) {
             break;
         }
     }
+
+    checkSTATInterrupt();
 }
 
 void PPU::searchOAM(uint8_t line) {
@@ -314,7 +316,7 @@ void PPU::drawLine() {
     }
 }
 
-void PPU::statInterrupt() {
+void PPU::checkSTATInterrupt() {
     if (((read(STAT) & 0x08) && (getStatus() == H_BLANK))    ||
         ((read(STAT) & 0x10) && (getStatus() == V_BLANK))    ||
         ((read(STAT) & 0x20) && (getStatus() == OAM_SEARCH)) ||
