@@ -19,7 +19,7 @@ Cartridge::Cartridge(const std::string &filename) {
         
         // grab game title in a mildly sneaky manner
         char *title_ptr = (char *) &rom[0x0134];
-        title = std::string(title_ptr);
+        title = std::string(title_ptr, 0xF);
 
         // get number of rom/ram banks based on size read from cart
         setROMSize();
@@ -71,7 +71,7 @@ void Cartridge::setROMSize() {
     uint8_t rom_size = rom[0x0148];
     uint8_t num_banks;
     if (rom_size <= 6) {
-        num_banks = 2 << (rom_size + 1);
+        num_banks = 2 << (rom_size);
     } else if (rom_size == 0x52) {
         num_banks = 72;
     } else if (rom_size == 0x53) {
