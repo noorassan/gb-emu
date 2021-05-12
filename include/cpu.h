@@ -46,7 +46,9 @@ private:
     // Interrupt Master Enable Flag
     // Set and reset with EI and DI instructions
     bool ime;
+
     bool halted;
+    bool stopped;
 
     uint16_t fetched;
 

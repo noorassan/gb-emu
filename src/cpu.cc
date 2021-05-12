@@ -580,6 +580,10 @@ void CPU::connectBus(Bus *bus) {
 }
 
 void CPU::requestInterrupt(INTERRUPT intr) {
+    if (intr == JOYPAD) {
+        stopped = false;
+    }
+
     write(IF, read(IF) | intr);
     halted = false;
 }
@@ -599,7 +603,7 @@ void CPU::reset() {
 
 
 uint8_t CPU::clock() {
-    if (halted) {
+    if (stopped || halted) {
         return 4;
     }
 
@@ -754,6 +758,7 @@ uint8_t CPU::NOP() {
 
 // TODO: Implement -- should halt processor until a button is pressed
 uint8_t CPU::STOP() {
+    stopped = true;
     return 0;
 }
 
