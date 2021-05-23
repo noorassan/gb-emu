@@ -105,11 +105,23 @@ void PPU::searchOAM(uint8_t line) {
 void PPU::fetchLine() {
     pixel_line.clear();
 
-    // TODO: More accurate transfer cycle emulation
     transfer_cycles = 172;
+    
+    // If PPU is not enabled, we give unlit pixels
+    if (!isPPUEnabled()) {
+        Pixel pixel;
+        pixel.data = 0;
+        pixel.unlit = 1;
+
+        while(pixel_line.size() < SCREEN_WIDTH) {
+            pixel_line.push_back(pixel);
+        }
+
+        return;
+    }
 
     uint8_t line = read(LY);
-    uint8_t win_x = read(WX) - 7;
+    uint8_t win_x = std::max(0, read(WX) - 7); // WX values of 0-7 act weirdly so we just set those to 0
     uint8_t win_y = read(WY);
 
     // Fetch more or less BG pixels based on window
@@ -288,10 +300,6 @@ void PPU::decodePixels(uint8_t low_byte, uint8_t high_byte, std::array<Pixel, 8>
 }
 
 void PPU::drawLine() {
-    if (!isPPUEnabled()) {
-        return;
-    }
-
     uint8_t line = read(LY);
 
     for (uint8_t x = 0; x < SCREEN_WIDTH; x++) {
