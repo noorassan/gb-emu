@@ -585,7 +585,6 @@ void CPU::requestInterrupt(INTERRUPT intr) {
     }
 
     write(IF, read(IF) | intr);
-    halted = false;
 }
 
 
@@ -603,15 +602,16 @@ void CPU::reset() {
 
 
 uint8_t CPU::clock() {
-    if (stopped || halted) {
+    // Check for interrupts and service
+    // Even if halted, we need to call handleInterrupt because it will unhalt if an interrupt has been received
+    if (handleInterrupt()) {
         return 4;
     }
 
-    // Check for interrupts and service
-    if (ime && handleInterrupt()) {
-        return 0;
+    if (halted) {
+        return 4;
     }
-
+    
     // Fetch next instruction and increment pc
     uint8_t opcode = read(pc);
     INSTRUCTION &instr = lookup[opcode];
@@ -715,6 +715,14 @@ bool CPU::handleInterrupt() {
         return false;
     }
 
+    // Even if interrupts aren't enabled we need to un-halt
+    halted = false;
+
+    // If interrupts aren't enabled we return false
+    if (!ime) {
+        return false;
+    }
+
     if (intrs & V_BLANK) {
         write(IF, intr_flags & ~V_BLANK);
         jump_addr = VBLANK_A;
@@ -756,13 +764,10 @@ uint8_t CPU::NOP() {
     return 0;
 }
 
-// TODO: Implement -- should halt processor until a button is pressed
 uint8_t CPU::STOP() {
-    stopped = true;
     return 0;
 }
 
-// TODO: Implement -- should halt processor until an interrupt is initiated
 uint8_t CPU::HALT() {
     halted = true;
     return 0;
