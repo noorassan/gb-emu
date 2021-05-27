@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <fstream>
 
 #include "cartridge.h"
 #include "controls.h"
@@ -47,6 +48,9 @@ public:
     void run();
 
     void insertCartridge(const std::shared_ptr<Cartridge> cart);
+
+    void saveState(const std::string &filename);
+    void loadState(const std::string &filename);
 
 private:
     bool handleDMA(uint16_t addr, uint8_t data);

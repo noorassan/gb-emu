@@ -127,6 +127,23 @@ void Bus::insertCartridge(const std::shared_ptr<Cartridge> cart) {
     this->cart = cart;
 }
 
+void Bus::saveState(const std::string &filename) {
+    // Saves the current cartridge RAM
+    std::ofstream ofs(filename);
+
+    std::vector<uint8_t> &ram = this->cart->getRAM();
+    ofs.write((char *) &ram[0], ram.size());
+    ofs.close();
+}
+
+void Bus::loadState(const std::string &filename) {
+    std::ifstream ifs(filename);
+
+    std::vector<uint8_t> &ram = this->cart->getRAM();
+    ifs.read((char *) &ram[0], ram.size());
+    ifs.close();
+}
+
 bool Bus::handleDMA(uint16_t addr, uint8_t data) {
     if (addr != 0xFF46) {
         return false;
