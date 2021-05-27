@@ -20,7 +20,7 @@ bool MBC1::read(uint16_t addr, uint32_t &mapped_addr, bool &rom_read) {
     } else if (addr >= 0xA000 && addr < 0xC000 && ram_enabled) {
         uint8_t bank = getRAMBank();
         rom_read = false;
-        mapped_addr = addr + bank * 0x2000;
+        mapped_addr = (addr & 0x1FFF) + bank * 0x2000;
         return true;
     }
 
@@ -40,7 +40,7 @@ bool MBC1::write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) {
         rom_mode = (data == 0x00);
     } else if (addr >= 0xA000 && addr < 0xC000) {
         uint8_t bank = getRAMBank();
-        mapped_addr = addr + (bank) * 0x2000;
+        mapped_addr = (addr & 0x1FFF) + (bank) * 0x2000;
         return true;
     }
 

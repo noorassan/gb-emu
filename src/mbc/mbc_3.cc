@@ -19,7 +19,7 @@ bool MBC3::read(uint16_t addr, uint32_t &mapped_addr, bool &rom_read) {
         return true;
     } else if (addr >= 0xA000 && addr < 0xC000 && ram_enabled) {
         rom_read = false;
-        mapped_addr = addr + ram_bank * 0x2000;
+        mapped_addr = (addr & 0x1FFF) + ram_bank * 0x2000;
         return true;
     }
 
@@ -37,7 +37,7 @@ bool MBC3::write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) {
     } else if (addr >= 0x6000 && addr < 0x8000) {
         // TODO: Add RTC clock
     } else if (addr >= 0xA000 && addr < 0xC000) {
-        mapped_addr = addr + ram_bank * 0x2000;
+        mapped_addr = (addr & 0x1FFF) + ram_bank * 0x2000;
         return true;
     }
 
