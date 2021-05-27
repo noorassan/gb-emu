@@ -62,6 +62,11 @@ void Cartridge::write(uint16_t addr, uint8_t data) {
     }
 }
 
+// Altering the returned vector will affect cartridge state so use cautiously
+std::vector<uint8_t> &Cartridge::getRAM() {
+    return ram;
+}
+
 std::string Cartridge::getTitle() {
     return title;
 }
@@ -102,7 +107,7 @@ void Cartridge::setRAMSize() {
         throw std::invalid_argument("Invalid RAM size value read from cartridge.");
     }
 
-    ram.resize(num_banks * 2 * KB);
+    ram.resize(num_banks * 8 * KB);
     for (auto &i : ram) i = 0x00;
     return;
 }
