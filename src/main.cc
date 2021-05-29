@@ -128,6 +128,8 @@ int main(int argc, char **argv) {
     }
 
     std::string gb_filename = std::string(argv[1]);
+    std::string save_filename = gb_filename.substr(0, gb_filename.find_last_of(".")) + ".sav";
+
     std::shared_ptr<Cartridge> cart = std::make_shared<Cartridge>(gb_filename);
     SDLGameboyDriver driver = SDLGameboyDriver(cart->getTitle());
 
@@ -136,16 +138,12 @@ int main(int argc, char **argv) {
     bus.reset();
 
     // load save file if it exists
-    std::string save_filename = gb_filename.substr(0, gb_filename.find_last_of(".")) + ".sav";
-    std::ifstream save_file = std::ifstream(save_filename);
-    if (save_file.good()) {
-        bus.loadState(save_filename);
-    }
-    save_file.close();
+    bus.loadState(save_filename);
 
     bus.run();
 
     // save state before exiting
     bus.saveState(save_filename);
+    
     return EXIT_SUCCESS;
 }

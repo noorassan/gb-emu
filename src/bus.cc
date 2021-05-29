@@ -128,16 +128,26 @@ void Bus::insertCartridge(const std::shared_ptr<Cartridge> cart) {
 }
 
 void Bus::saveState(const std::string &filename) {
-    // Saves the current cartridge RAM
+    std::vector<uint8_t> &ram = this->cart->getRAM();
+
+    // if the cartridge has no ram, we return
+    if (!ram.size()) {
+        return;
+    }
+
     std::ofstream ofs(filename);
 
-    std::vector<uint8_t> &ram = this->cart->getRAM();
     ofs.write((char *) &ram[0], ram.size());
     ofs.close();
 }
 
 void Bus::loadState(const std::string &filename) {
     std::ifstream ifs(filename);
+
+    // if the file doesn't exist, we return
+    if (!ifs.good()) {
+        return;
+    }
 
     std::vector<uint8_t> &ram = this->cart->getRAM();
     ifs.read((char *) &ram[0], ram.size());
