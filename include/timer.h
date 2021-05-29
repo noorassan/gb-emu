@@ -21,7 +21,7 @@ public:
     void connectBus(Bus *bus);
     void clock(uint8_t cycles);
 
-    // Returns true if a r/w  to addr is handled by the timer
+    // Returns true if a r/w to addr is handled by the timer
     bool regWrite(uint16_t addr, uint8_t data);
     bool regRead(uint16_t addr, uint8_t &val);
 
@@ -33,6 +33,9 @@ private:
 
     // timer registers
     uint16_t internal_div;
+    uint8_t tima;
+    uint8_t tma;
+    uint8_t tac;
 
     uint8_t wait_cycles;
     bool last_and_result;

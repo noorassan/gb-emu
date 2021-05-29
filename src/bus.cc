@@ -75,14 +75,6 @@ uint8_t Bus::cpuRead(uint16_t addr) {
     return 0;
 }
 
-void Bus::deviceWrite(uint16_t addr, uint8_t data) {
-    zero_page_ram[addr & 0x00FF] = data;
-}
-
-uint8_t Bus::deviceRead(uint16_t addr) {
-    return zero_page_ram[addr & 0x00FF];
-}
-
 void Bus::requestInterrupt(INTERRUPT intr) {
     cpu.requestInterrupt(intr);
 }

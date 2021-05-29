@@ -81,6 +81,19 @@ private:
     Bus *bus;
     GameboyDriver *driver;
 
+    // PPU registers
+    uint8_t lcdc;
+    uint8_t stat;
+    uint8_t scy;
+    uint8_t scx;
+    uint8_t ly;
+    uint8_t lyc;
+    uint8_t bgp;
+    uint8_t obp0;
+    uint8_t obp1;
+    uint8_t wy;
+    uint8_t wx;
+
 private:
     // Handle reads and writes from the PPU itself
     uint8_t read(uint16_t addr);
@@ -118,4 +131,5 @@ private:
     void fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::array<Pixel, 8> &out);
     void fetchOBJLine(const Sprite &sprite, uint8_t curr_line, std::array<Pixel, 8> &out);
     void decodePixels(uint8_t low_byte, uint8_t high_byte, std::array<Pixel, 8> &out);
+
 };

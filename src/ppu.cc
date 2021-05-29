@@ -16,7 +16,7 @@ void PPU::reset() {
     pixel_line.clear();
 
     setStatus(OAM_SEARCH);
-    write(LY, 0);
+    ly = 0;
 }
 
 void PPU::clock(uint8_t clocks) {
@@ -26,16 +26,15 @@ void PPU::clock(uint8_t clocks) {
         case H_BLANK: {
             uint32_t hblank_cycles = 376 - transfer_cycles;
             if (cycles >= hblank_cycles) {
-                uint8_t line = read(LY);
-                if (line == SCREEN_HEIGHT - 1) {
+                if (ly == SCREEN_HEIGHT - 1) {
                     setStatus(V_BLANK);
                     bus->requestInterrupt(INTERRUPT::V_BLANK);
                 } else {
-                    searchOAM(line + 1);
+                    searchOAM(ly + 1);
                     setStatus(OAM_SEARCH);
                 }
 
-                write(LY, line + 1);
+                ly++;
                 cycles -= hblank_cycles;
             }
             break;
@@ -43,14 +42,13 @@ void PPU::clock(uint8_t clocks) {
 
         case V_BLANK: {
             if (cycles >= 456) {
-                uint8_t line = read(LY);
-                if (line == 153) {
+                if (ly == 153) {
                     this->driver->render();
-                    searchOAM(line + 1);
+                    searchOAM(ly + 1);
                     setStatus(OAM_SEARCH);
-                    write(LY, 0);
+                    ly = 0;
                 } else {
-                    write(LY, line + 1);
+                    ly++;
                 }
 
                 cycles -= 456;
@@ -120,19 +118,18 @@ void PPU::fetchLine() {
         return;
     }
 
-    uint8_t line = read(LY);
-    uint8_t win_x = std::max(0, read(WX) - 7); // WX values of 0-7 act weirdly so we just set those to 0
-    uint8_t win_y = read(WY);
+    uint8_t win_x = std::max(0, wx - 7); // WX values of 0-7 act weirdly so we just set those to 0
+    uint8_t win_y = wy;
 
     // Fetch more or less BG pixels based on window
-    if (isWinEnabled() && (line >= win_y) && (win_x <= SCREEN_WIDTH)) {
-        fetchBG(line, win_x);
-        fetchWin((line - win_y), (SCREEN_WIDTH - win_x));
+    if (isWinEnabled() && (ly >= win_y) && (win_x <= SCREEN_WIDTH)) {
+        fetchBG(ly, win_x);
+        fetchWin((ly - win_y), (SCREEN_WIDTH - win_x));
     } else {
-        fetchBG(line, SCREEN_WIDTH);
+        fetchBG(ly, SCREEN_WIDTH);
     }
 
-    fetchOBJ(line);
+    fetchOBJ(ly);
 }
 
 void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
@@ -150,17 +147,15 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
     }
 
     std::array<Pixel, 8> fetched;
-    uint8_t scroll_x = read(SCX);
-    uint8_t scroll_y = read(SCY);
 
-    uint8_t skip_pixels = scroll_x % 8;
+    uint8_t skip_pixels = scx % 8;
 
     // X & Y coordinates of our starting tile in the BG tile map
-    uint8_t tile_x = (scroll_x / 8) & 0x1F;
-    uint8_t tile_y = ((scroll_y + line) / 8) & 0x1F;
+    uint8_t tile_x = (scx / 8) & 0x1F;
+    uint8_t tile_y = ((scy + line) / 8) & 0x1F;
 
     // Which line of the tiles we're fetching
-    uint8_t tile_line = (scroll_y + line) % 8;
+    uint8_t tile_line = (scy + line) % 8;
     uint16_t line_start = getBGTilemapStart() + tile_y * 0x20;
 
     while (num_pixels > 0) {
@@ -233,7 +228,7 @@ void PPU::fetchOBJ(uint8_t line) {
 
 void PPU::fetchTileLine(uint8_t tile_id, uint8_t tile_line, std::array<Pixel, 8> &out) {
     uint16_t addr;
-    if (read(LCDC) & 0x10) {
+    if (lcdc & 0x10) {
         addr = 0x8000 + (tile_id * 0x10);
     } else {
         addr = 0x9000 + (((int8_t) tile_id) * 0x10);
@@ -300,41 +295,39 @@ void PPU::decodePixels(uint8_t low_byte, uint8_t high_byte, std::array<Pixel, 8>
 }
 
 void PPU::drawLine() {
-    uint8_t line = read(LY);
-
     for (uint8_t x = 0; x < SCREEN_WIDTH; x++) {
         Pixel pixel = pixel_line[x];
-        uint16_t palette_addr;
+        uint8_t palette;
         if (pixel.bgp) {
-            palette_addr = BGP;
+            palette = bgp;
         } else if (pixel.obp0) {
-            palette_addr = OBP0;
+            palette = obp0;
         } else if (pixel.obp1) {
-            palette_addr = OBP1;
+            palette = obp1;
         }
 
         COLOR color;
         if (pixel.unlit) {
             color = UNLIT;
         } else {
-            color = COLOR((read(palette_addr) >> (pixel.color * 2)) & 0x03);
+            color = COLOR((palette >> (pixel.color * 2)) & 0x03);
         }
 
-        this->driver->draw(color, x, line);
+        this->driver->draw(color, x, ly);
     }
 }
 
 void PPU::checkSTATInterrupt() {
-    if (((read(STAT) & 0x08) && (getStatus() == H_BLANK))    ||
-        ((read(STAT) & 0x10) && (getStatus() == V_BLANK))    ||
-        ((read(STAT) & 0x20) && (getStatus() == OAM_SEARCH)) ||
-        ((read(STAT) & 0x40) && (read(LYC) == read(LY)))) {
+    if (((stat & 0x08) && (getStatus() == H_BLANK))    ||
+        ((stat & 0x10) && (getStatus() == V_BLANK))    ||
+        ((stat & 0x20) && (getStatus() == OAM_SEARCH)) ||
+        ((stat & 0x40) && (lyc == ly))) {
         bus->requestInterrupt(LCD_STAT);
     }
 }
 
 uint16_t PPU::getBGTilemapStart() {
-    if (read(LCDC) & 0x08) {
+    if (lcdc & 0x08) {
         return 0x9C00;
     } else {
         return 0x9800;
@@ -342,7 +335,7 @@ uint16_t PPU::getBGTilemapStart() {
 }
 
 uint16_t PPU::getWinTilemapStart() {
-    if (read(LCDC) & 0x40) {
+    if (lcdc & 0x40) {
         return 0x9C00;
     } else {
         return 0x9800;
@@ -350,7 +343,7 @@ uint16_t PPU::getWinTilemapStart() {
 }
 
 uint8_t PPU:: getOBJHeight() {
-    if (read(LCDC) & 0x04) {
+    if (lcdc & 0x04) {
         return 16;
     } else {
         return 8;
@@ -358,28 +351,28 @@ uint8_t PPU:: getOBJHeight() {
 }
 
 PPU::PPU_STATUS PPU::getStatus() {
-    return (PPU_STATUS) (read(STAT) & 0x03);
+    return (PPU_STATUS) (stat & 0x03);
 }
 
 void PPU::setStatus(PPU_STATUS status) {
-    uint8_t stat_val = (read(STAT) & 0xFC) | status;
-    write(STAT, stat_val);
+    uint8_t stat_val = (stat & 0xFC) | status;
+    stat = stat_val;
 }
 
 bool PPU::isPPUEnabled() {
-    return read(LCDC) & 0x80;
+    return lcdc & 0x80;
 }
 
 bool PPU::isWinEnabled() {
-    return (read(LCDC) & 0x21) == 0x21;
+    return (lcdc & 0x21) == 0x21;
 }
 
 bool PPU::isBGEnabled() {
-    return read(LCDC) & 0x01;
+    return lcdc & 0x01;
 }
 
 bool PPU::isOBJEnabled() {
-    return read(LCDC) & 0x02;
+    return lcdc & 0x02;
 }
 
 uint8_t PPU::cpuRead(uint16_t addr) {
@@ -413,16 +406,87 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data) {
 }
 
 bool PPU::regRead(uint16_t addr, uint8_t &val) {
-    return false;
+    switch(addr) {
+        case LCDC:
+            val = lcdc;
+            break;
+        case STAT:
+            val = stat;
+            break;
+        case SCY:
+            val = scy;
+            break;
+        case SCX:
+            val = scx;
+            break;
+        case LY:
+            val = ly;
+            break;
+        case LYC:
+            val = lyc;
+            break;
+        case BGP:
+            val = bgp;
+            break;
+        case OBP0:
+            val = obp0;
+            break;
+        case OBP1:
+            val = obp1;
+            break;
+        case WY:
+            val = wy;
+            break;
+        case WX:
+            val = wx;
+            break;
+        default:
+            return false;
+    }
+
+    return true;
 }
 
 bool PPU::regWrite(uint16_t addr, uint8_t data) {
-    if (addr == LY) {
-        write(LY, 0);
-        return true;
+    switch(addr) {
+        case LCDC:
+            lcdc = data;
+            break;
+        case STAT:
+            stat = data;
+            break;
+        case SCY:
+            scy = data;
+            break;
+        case SCX:
+            scx = data;
+            break;
+        case LY:
+            ly = 0;
+            break;
+        case LYC:
+            lyc = data;
+            break;
+        case BGP:
+            bgp = data;
+            break;
+        case OBP0:
+            obp0 = data;
+            break;
+        case OBP1:
+            obp1 = data;
+            break;
+        case WY:
+            wy = data;
+            break;
+        case WX:
+            wx = data;
+            break;
+        default:
+            return false;
     }
 
-    return false;
+    return true;
 }
 
 uint8_t PPU::read(uint16_t addr) {
@@ -430,9 +494,9 @@ uint8_t PPU::read(uint16_t addr) {
         return vram[addr & 0x7FFF];
     } else if (addr >= 0xFE00 && addr < 0xFEA0) {
         return oam[addr & 0x01FF];
-    } else {
-        return bus->deviceRead(addr);
     }
+
+    return 0;
 }
 
 void PPU::write(uint16_t addr, uint8_t data) {
@@ -440,8 +504,6 @@ void PPU::write(uint16_t addr, uint8_t data) {
         vram[addr & 0x7FFF] = data;
     } else if (addr >= 0xFE00 && addr < 0xFEA0) {
         oam[addr & 0x00FF] = data;
-     } else {
-        bus->deviceWrite(addr, data);
      }
 }
 

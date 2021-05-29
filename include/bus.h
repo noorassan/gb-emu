@@ -36,11 +36,6 @@ public:
     uint8_t cpuRead(uint16_t addr);
     void cpuWrite(uint16_t addr, uint8_t data);
 
-    // For timer, PPU. controls, etc.
-    // Allows access to high ram without going through devices in charge of registers
-    uint8_t deviceRead(uint16_t addr);
-    void deviceWrite(uint16_t addr, uint8_t data);
-
     void requestInterrupt(INTERRUPT intr);
 
     void reset();

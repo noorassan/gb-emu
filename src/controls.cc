@@ -6,12 +6,10 @@ Controls::Controls(GameboyDriver *driver) {
     pressed.data = 0;
 }
 
-#include <iostream>
 bool Controls::regRead(uint16_t addr, uint8_t &val) {
     if (addr == P1) {
         updateControls();
 
-        uint8_t p1 = read(P1);
         val = 0;
 
         if (~p1 & 0x10) {
@@ -35,7 +33,7 @@ bool Controls::regRead(uint16_t addr, uint8_t &val) {
 
 bool Controls::regWrite(uint16_t addr, uint8_t data) {
     if (addr == P1) {
-        write(addr, data);
+        p1 = data;
         return true;
     }
 
@@ -51,14 +49,6 @@ void Controls::updateControls() {
     }
 
     pressed = new_pressed;
-}
-
-uint8_t Controls::read(uint16_t addr) {
-    return bus->deviceRead(addr);
-}
-
-void Controls::write(uint16_t addr, uint8_t data) {
-    bus->deviceWrite(addr, data);
 }
 
 void Controls::connectBus(Bus *bus) {
