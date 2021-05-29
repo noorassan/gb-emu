@@ -7,27 +7,34 @@ void Timer::connectBus(Bus *bus) {
 }
 
 void Timer::clock(uint8_t clocks) {
-    // cycles will be at most 16, so it's not a problem to process all the cycles at once
-    // because we'll never have two increments of TIMA per clock
-    if (wait_cycles > 0 && (wait_cycles -= clocks) < 0) {
-        write(TIMA, read(TMA));
-        bus->requestInterrupt(INTERRUPT::TIMER);
-    }
+    while (clocks > 0) {
+        uint8_t curr_clocks = clocks > 16 ? 16 : clocks;
+        clocks -= curr_clocks;
 
-    internal_div += clocks;
-    bool and_result = (read(TAC) & 0x03) &&
-                      ((read(DIV) >> getDIVBitPos()) & 0x01);
-
-    if (last_and_result && !and_result) {
-        if (read(TIMA) == 0xFF) {
-            overflowed = true;
-            wait_cycles = 4;
+        if (wait_cycles > 0 && wait_cycles < curr_clocks) {
+            write(TIMA, read(TMA));
+            bus->requestInterrupt(INTERRUPT::TIMER);
+            wait_cycles = 0;
+        } else if (wait_cycles > 0) {
+            wait_cycles -= curr_clocks;
         }
 
-        write(TIMA, read(TIMA) + 1);
-    }
+        internal_div += curr_clocks;
+        write(DIV, internal_div >> 8);
+    
+        bool and_result = (read(TAC) & 0x04) &&
+                          ((read(DIV) >> getDIVBitPos()) & 0x01);
 
-    last_and_result = and_result;
+        if (last_and_result && !and_result) {
+            if (read(TIMA) == 0xFF) {
+                wait_cycles = 4;
+            }
+
+            write(TIMA, read(TIMA) + 1);
+        }
+
+        last_and_result = and_result;
+    }
 }
 
 uint8_t Timer::getDIVBitPos() {
@@ -60,7 +67,7 @@ bool Timer::regWrite(uint16_t addr, uint8_t data) {
         return true;
     } else if (addr == TIMA) {
         wait_cycles = 0;
-        write(TIMA, 0);
+        write(TIMA, data);
         return true;
     }
 

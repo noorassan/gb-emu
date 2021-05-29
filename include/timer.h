@@ -36,6 +36,5 @@ private:
 
     uint8_t wait_cycles;
     bool last_and_result;
-    bool overflowed;
     Bus *bus;
 };
