@@ -164,7 +164,14 @@ void PPU::fetchBG(uint8_t line, uint8_t num_pixels) {
         fetchTileLine(tile_id, tile_line, fetched);
 
         // Make sure we don't insert too many pixels
-        uint8_t num_insert = std::min((uint8_t) 8, num_pixels) - skip_pixels;
+        uint8_t num_insert = std::min((uint8_t) 8, num_pixels);
+
+        // Protect against underflow
+        if (skip_pixels > num_insert) {
+            num_insert = 0;
+        } else {
+            num_insert -= skip_pixels;
+        }
 
         // Insert pixels
         pixel_line.insert(pixel_line.end(),
