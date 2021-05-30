@@ -407,41 +407,18 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data) {
 
 bool PPU::regRead(uint16_t addr, uint8_t &val) {
     switch(addr) {
-        case LCDC:
-            val = lcdc;
-            break;
-        case STAT:
-            val = stat;
-            break;
-        case SCY:
-            val = scy;
-            break;
-        case SCX:
-            val = scx;
-            break;
-        case LY:
-            val = ly;
-            break;
-        case LYC:
-            val = lyc;
-            break;
-        case BGP:
-            val = bgp;
-            break;
-        case OBP0:
-            val = obp0;
-            break;
-        case OBP1:
-            val = obp1;
-            break;
-        case WY:
-            val = wy;
-            break;
-        case WX:
-            val = wx;
-            break;
-        default:
-            return false;
+        case LCDC: val = lcdc; break;
+        case STAT: val = stat; break;
+        case SCY:  val = scy;  break;
+        case SCX:  val = scx;  break;
+        case LY:   val = ly;   break;
+        case LYC:  val = lyc;  break;
+        case BGP:  val = bgp;  break;
+        case OBP0: val = obp0; break;
+        case OBP1: val = obp1; break;
+        case WY:   val = wy;   break;
+        case WX:   val = wx;   break;
+        default:   return false;
     }
 
     return true;
@@ -449,41 +426,18 @@ bool PPU::regRead(uint16_t addr, uint8_t &val) {
 
 bool PPU::regWrite(uint16_t addr, uint8_t data) {
     switch(addr) {
-        case LCDC:
-            lcdc = data;
-            break;
-        case STAT:
-            stat = data;
-            break;
-        case SCY:
-            scy = data;
-            break;
-        case SCX:
-            scx = data;
-            break;
-        case LY:
-            ly = 0;
-            break;
-        case LYC:
-            lyc = data;
-            break;
-        case BGP:
-            bgp = data;
-            break;
-        case OBP0:
-            obp0 = data;
-            break;
-        case OBP1:
-            obp1 = data;
-            break;
-        case WY:
-            wy = data;
-            break;
-        case WX:
-            wx = data;
-            break;
-        default:
-            return false;
+        case LCDC: lcdc = data; break;
+        case STAT: stat = data; break;
+        case SCY:  scy = data;  break;
+        case SCX:  scx = data;  break;
+        case LY:   ly = 0;      break;
+        case LYC:  lyc = data;  break;
+        case BGP:  bgp = data;  break;
+        case OBP0: obp0 = data; break;
+        case OBP1: obp1 = data; break;
+        case WY:   wy = data;   break;
+        case WX:   wx = data;   break;
+        default:   return false;
     }
 
     return true;

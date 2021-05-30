@@ -60,14 +60,9 @@ bool Timer::regWrite(uint16_t addr, uint8_t data) {
             wait_cycles = 0;
             tima = data;
             break;
-        case TMA:
-            tma = data;
-            break;
-        case TAC:
-            tac = data;
-            break;
-        default:
-            return false;
+        case TMA: tma = data; break;
+        case TAC: tac = data; break;
+        default:  return false;
     }
 
     return true;
@@ -78,17 +73,10 @@ bool Timer::regRead(uint16_t addr, uint8_t &val) {
         case DIV:
             val = internal_div >> 8;
             break;
-        case TIMA:
-            val = tima;
-            break;
-        case TMA:
-            val = tma;
-            break;
-        case TAC:
-            val = tac;
-            break;
-        default:
-            return false;
+        case TIMA: val = tima; break;
+        case TMA:  val = tma;  break;
+        case TAC:  val = tac;  break;
+        default:   return false;
     }
 
     return true;
