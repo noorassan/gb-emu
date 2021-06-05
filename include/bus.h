@@ -6,12 +6,13 @@
 #include <fstream>
 
 #include "cartridge.h"
-#include "controls.h"
 #include "cpu.h"
+#include "ppu.h"
+#include "apu.h"
+#include "timer.h"
+#include "controls.h"
 #include "gb_driver.h"
 #include "interrupt.h"
-#include "ppu.h"
-#include "timer.h"
 
 #define POLL_INTERVAL 210672
 
@@ -24,6 +25,7 @@ public:
 private:
     CPU cpu;
     PPU ppu;
+    APU apu;
     Timer timer;
     Controls controls;
     std::shared_ptr<Cartridge> cart;

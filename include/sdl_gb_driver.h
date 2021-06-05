@@ -8,10 +8,11 @@
 
 #include "gb_driver.h"
 
+#define SAMPLE_SIZE 2048
 
 class SDLGameboyDriver : public GameboyDriver {
     public:
-        SDLGameboyDriver(std::string title);
+        SDLGameboyDriver(std::string title, uint32_t sampling_rate);
         ~SDLGameboyDriver();
 
     public:
@@ -21,11 +22,14 @@ class SDLGameboyDriver : public GameboyDriver {
         // Render the screen and wait for the rest of the frame
         void render() override;
 
+        // Push an audio sample
+        void pushSample(AudioOutput output) override;
+
         // Return true if a QUIT input has been received
         bool quitReceived() override;
 
         // Returns a ControllerState representing currently pressed controls
-        virtual ControllerState pollControls() override;
+        ControllerState pollControls() override;
     
     private:
         uint32_t getARGBColor(COLOR color);
@@ -38,6 +42,10 @@ class SDLGameboyDriver : public GameboyDriver {
 
         const uint8_t *keyboard_state;
         uint32_t *pixels;
+
+        uint8_t audio_device_id;
+        uint32_t samples_stored;
+        std::array<float, SAMPLE_SIZE> samples;
 
         std::chrono::steady_clock::time_point time;
 };

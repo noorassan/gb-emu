@@ -2,11 +2,11 @@
 
 #include "bus.h"
 
-Bus::Bus(GameboyDriver *driver) : ppu(driver), controls(driver) {
+Bus::Bus(GameboyDriver *driver) : ppu(driver), apu(driver), controls(driver) {
     this->driver = driver;
 
-    ppu.connectBus(this);
     cpu.connectBus(this);
+    ppu.connectBus(this);
     timer.connectBus(this);
     controls.connectBus(this);
 }
@@ -23,8 +23,7 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
     } else if (addr >= 0xFE00 && addr < 0xFEA0) {
         ppu.cpuWrite(addr, data);
     } else if (addr >= 0xFF00 && addr <= 0xFFFF) {
-        // Sometimes devices interfere with writes to their registers
-        // so we allow them the opportunity to intercept the write
+        // Writes in this address range are delegated to devices
 
         if (timer.regWrite(addr, data)) {
             return;
@@ -33,6 +32,9 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
             return;
         }
         if (controls.regWrite(addr, data)) {
+            return;
+        }
+        if (apu.regWrite(addr, data)) {
             return;
         }
         if (handleDMA(addr, data)) {
@@ -55,14 +57,16 @@ uint8_t Bus::cpuRead(uint16_t addr) {
     } else if (addr >= 0xFE00 && addr < 0xFEA0) {
         return ppu.cpuRead(addr);
     } else if (addr >= 0xFF00 && addr <= 0xFFFF) {
-        uint8_t val;
+        // Reads in this address range are delegated to devices
 
-        // Sometimes devices interfere with reads to their registers
-        // so we allow them the opportunity to intercept the read
+        uint8_t val;
         if (timer.regRead(addr, val)) {
             return val;
         }
         if (ppu.regRead(addr, val)) {
+            return val;
+        }
+        if (apu.regRead(addr, val)) {
             return val;
         }
         if (controls.regRead(addr, val)) {
@@ -95,6 +99,7 @@ void Bus::reset() {
 
     cpu.reset();
     ppu.reset();
+    apu.reset();
 }
 
 void Bus::run() {
@@ -108,6 +113,7 @@ void Bus::run() {
         while (cycles <= POLL_INTERVAL) {
             uint8_t elapsed = cpu.clock();
             ppu.clock(elapsed);
+            apu.clock(elapsed);
             timer.clock(elapsed);
 
             cycles += elapsed;

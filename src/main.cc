@@ -1,8 +1,8 @@
 #include "bus.h"
 #include "sdl_gb_driver.h"
 
-SDLGameboyDriver::SDLGameboyDriver(std::string title) : GameboyDriver() {
-    SDL_Init(SDL_INIT_VIDEO);
+SDLGameboyDriver::SDLGameboyDriver(std::string title, uint32_t sampling_rate) : GameboyDriver(sampling_rate) {
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
     window = SDL_CreateWindow(title.c_str(), 
                      SDL_WINDOWPOS_UNDEFINED,
@@ -25,6 +25,18 @@ SDLGameboyDriver::SDLGameboyDriver(std::string title) : GameboyDriver() {
     // Lock texture so we're ready to start drawing pixels to it
     int32_t pitch;
     SDL_LockTexture(texture, nullptr, (void **) &pixels, &pitch);
+
+    SDL_AudioSpec audio_settings;
+    audio_settings.freq = getSamplingRate();
+    audio_settings.format = AUDIO_F32SYS;
+    audio_settings.channels = 2;
+    audio_settings.callback = nullptr;
+    samples_stored = 0;
+
+    const char *audio_device_name = SDL_GetAudioDeviceName(2, 0);;
+    audio_device_id = SDL_OpenAudioDevice(audio_device_name, false, &audio_settings, nullptr, false);
+    SDL_PauseAudioDevice(audio_device_id, false);
+    std::cout << audio_device_name << std::endl;
 
     time = std::chrono::steady_clock::now();
     quit = false;
@@ -95,6 +107,40 @@ void SDLGameboyDriver::render() {
     time = std::chrono::steady_clock::now();
 }
 
+void SDLGameboyDriver::pushSample(AudioOutput output) {
+    // samples are only provided at the rate that we request in getSamplingRate, so we don't need to downsample
+    float unprocessed_sample;
+    float left_sample = 0;
+    float right_sample = 0;
+
+    // mix channel 1
+    unprocessed_sample = output.ch1_left / 100.0F;
+    SDL_MixAudioFormat((uint8_t *) &left_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 20);
+    unprocessed_sample = output.ch1_right / 100.0F;
+    SDL_MixAudioFormat((uint8_t *) &right_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 20);
+
+    // mix channel 2
+    unprocessed_sample = output.ch2_left / 100.0F;
+    SDL_MixAudioFormat((uint8_t *) &left_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 20);
+    unprocessed_sample = output.ch2_right / 100.0F;
+    SDL_MixAudioFormat((uint8_t *) &right_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 20);
+
+    // push left and right samples
+    samples[samples_stored] = left_sample;
+    samples[samples_stored + 1] = right_sample;
+    samples_stored += 2;
+
+    if (samples_stored >= SAMPLE_SIZE) {
+        //// ensure that audio queue doesn't get overfilled
+        //while (SDL_GetQueuedAudioSize(audio_device_id) >= SAMPLE_SIZE * sizeof(float)) {
+        //    std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+        //}
+
+        SDL_QueueAudio(audio_device_id, (void *)&samples[0], 2048 * sizeof(float));
+        samples_stored = 0;
+    }
+}
+
 bool SDLGameboyDriver::quitReceived() {
     return quit;
 }
@@ -131,7 +177,7 @@ int main(int argc, char **argv) {
     std::string save_filename = gb_filename.substr(0, gb_filename.find_last_of(".")) + ".sav";
 
     std::shared_ptr<Cartridge> cart = std::make_shared<Cartridge>(gb_filename);
-    SDLGameboyDriver driver = SDLGameboyDriver(cart->getTitle());
+    SDLGameboyDriver driver = SDLGameboyDriver(cart->getTitle(), 48000);
 
     Bus bus(&driver);
     bus.insertCartridge(cart);
