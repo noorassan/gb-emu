@@ -20,29 +20,20 @@ void APU::reset() {
     resetCh1();
     resetCh2();
 
-    total_clocks = 0;
+    clocks_to_sample = 0;
 }
 
 void APU::clock(uint8_t clocks) {
     if (isAPUEnabled()) {
-        //while (clocks > 0) {
-        //    // perform as many clocks as possible until we need to provide a sample
-        //    uint8_t curr_clocks = std::min(clocks, (uint8_t) (sample_frequency - total_clocks % sample_frequency))
-        //}
-
-        for (uint8_t i = 0; i < clocks; i++) {
+        // perform as many clocks as possible at each step until we need to provide a sample
+        while (clocks >= clocks_to_sample) {
             AudioOutput output = {};
 
-            // clock channels
-            clockCh1(1);
-            clockCh2(1);
+            clockCh1(clocks_to_sample);
+            clockCh2(clocks_to_sample);
 
-            total_clocks++;
-
-            // only push audio samples at the rate that the driver wants them
-            if (total_clocks % (GB_CLOCK_RATE / driver->getSamplingRate()) != 0) {
-                continue;
-            }
+            clocks -= clocks_to_sample;
+            clocks_to_sample = sample_frequency;
 
             // mix channel 1
             if (isCh1Enabled()) {
@@ -74,6 +65,11 @@ void APU::clock(uint8_t clocks) {
 
             driver->pushSample(output);
         }
+
+        // apply remaining clocks
+        clockCh1(clocks);
+        clockCh2(clocks);
+        clocks_to_sample -= clocks;
     }
 }
 

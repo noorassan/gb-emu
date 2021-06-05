@@ -2,15 +2,19 @@
 
 
 void APU::clockCh1(uint8_t clocks) {
-    if (ch1_timer == 0) {
-        ch1_timer = FREQ_TO_PERIOD(getCh1Frequency());
-        ch1_pointer = (ch1_pointer + 1) % 8;
-    }
+    uint32_t period = FREQ_TO_PERIOD(getCh1Frequency());
 
-    ch1_timer--;
+    if (clocks >= ch1_timer) {
+        ch1_pointer += 1 + ((clocks - ch1_timer) / period);
+        ch1_pointer %= 8;
+
+        ch1_timer = period - ((clocks - ch1_timer) % period);
+    } else {
+        ch1_timer -= clocks;
+    }
 }
 
-void APU:: resetCh1() {
+void APU::resetCh1() {
     ch1_pointer = 0;
     ch1_timer = FREQ_TO_PERIOD(getCh1Frequency());
     ch1_freq_timer = FREQ_CLOCKS; 

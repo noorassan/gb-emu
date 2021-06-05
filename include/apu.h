@@ -46,8 +46,6 @@ class APU {
         APU(GameboyDriver *driver);
         ~APU() = default;
 
-        friend class Channel1;
-
     public:
         // Handles reads to APU managed high ram registers
         bool regWrite(uint16_t addr, uint8_t data);
@@ -57,8 +55,8 @@ class APU {
         void clock(uint8_t clocks);
 
     private:
-        uint8_t total_clocks;
-        uint8_t sample_frequency;
+        uint32_t clocks_to_sample;
+        uint32_t sample_frequency;
 
         GameboyDriver *driver;
         std::array<uint8_t, 4> duty_cycles;
