@@ -91,7 +91,7 @@ void PPU::searchOAM(uint8_t line) {
         sprite.tile_num = read(addr + 2);
         sprite.flags    = read(addr + 3);
 
-        if (((sprite.pos_y - 16) <= line) && ((sprite.pos_y - 16 + obj_height) >= line)) {
+        if (((sprite.pos_y - 16) <= line) && ((sprite.pos_y - 16 + obj_height) > line)) {
             sprites.push_back(sprite);
         }
 
