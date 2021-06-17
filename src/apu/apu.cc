@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "apu.h"
+#include "apu/apu.h"
 #include "audio_output.h"
 
 APU::APU(GameboyDriver *driver) {
@@ -13,12 +13,14 @@ APU::APU(GameboyDriver *driver) {
 
 void APU::reset() {
     // register initial values
-    nr10 = 0x80; nr11 = 0xBF; nr12 = 0xF3; nr14 = 0xBF; nr21 = 0x3F; nr22 = 0x00; 
-    nr24 = 0xBF; nr30 = 0x7F; nr31 = 0xFF; nr32 = 0x9F; nr33 = 0xBF; nr41 = 0xFF; 
-    nr42 = 0x00; nr43 = 0x00; nr44 = 0xBF; nr50 = 0x77; nr51 = 0xF3; nr52 = 0xF3;
+    nr50 = 0x77;
+    nr51 = 0xF3;
+    nr52 = 0xF3;
 
-    resetCh1();
-    resetCh2();
+    ch1.reset();
+    ch2.reset();
+    ch3.reset();
+    ch4.reset();
 
     clocks_to_sample = 0;
 }
@@ -29,15 +31,17 @@ void APU::clock(uint8_t clocks) {
         while (clocks >= clocks_to_sample) {
             AudioOutput output = {};
 
-            clockCh1(clocks_to_sample);
-            clockCh2(clocks_to_sample);
+            ch1.clock(clocks_to_sample);
+            ch2.clock(clocks_to_sample);
+            ch3.clock(clocks_to_sample);
+            ch4.clock(clocks_to_sample);
 
             clocks -= clocks_to_sample;
             clocks_to_sample = sample_frequency;
 
             // mix channel 1
-            if (isCh1Enabled()) {
-                uint8_t ch1_output = getCh1Output();
+            if (ch1.isEnabled()) {
+                uint8_t ch1_output = ch1.getOutput();
 
                 // output left
                 if (nr51 & 0x10) {
@@ -50,8 +54,8 @@ void APU::clock(uint8_t clocks) {
             }
 
             // mix channel 2
-            if (isCh2Enabled()) {
-                uint8_t ch2_output = ((getCh2Duty() >> ch2_pointer) & 0x01) * getCh2Volume();
+            if (ch2.isEnabled()) {
+                uint8_t ch2_output = ch2.getOutput();
 
                 // output left
                 if (nr51 & 0x20) {
@@ -63,12 +67,42 @@ void APU::clock(uint8_t clocks) {
                 }
             }
 
+            // mix channel 3
+            if (ch3.isEnabled()) {
+                uint8_t ch3_output = ch3.getOutput();
+
+                // output left
+                if (nr51 & 0x04) {
+                    output.ch3_left = ch3_output * getLeftVolume();
+                }
+                // output right
+                if (nr51 & 0x40) {
+                    output.ch3_right = ch3_output * getRightVolume();
+                }
+            }
+
+            // mix channel 4
+            if (ch4.isEnabled()) {
+                uint8_t ch4_output = ch4.getOutput();
+
+                // output left
+                if (nr51 & 0x08) {
+                    output.ch4_left = ch4_output * getLeftVolume();
+                }
+                // output right
+                if (nr51 & 0x80) {
+                    output.ch4_right = ch4_output * getRightVolume();
+                }
+            }
+
             driver->pushSample(output);
         }
 
         // apply remaining clocks
-        clockCh1(clocks);
-        clockCh2(clocks);
+        ch1.clock(clocks);
+        ch2.clock(clocks);
+        ch3.clock(clocks);
+        ch4.clock(clocks);
         clocks_to_sample -= clocks;
     }
 }
@@ -86,39 +120,23 @@ uint8_t APU::getRightVolume() {
 }
 
 bool APU::regWrite(uint16_t addr, uint8_t data) {
-    if (addr >= WAVE_PATTERN_START && addr < WAVE_PATTERN_END) {
-        wave_pattern_ram[addr & 0x000F] = data;
+    if (ch1.regWrite(addr, data)) {
+        return true;
+    }
+    if (ch2.regWrite(addr, data)) {
+        return true;
+    }
+    if (ch3.regWrite(addr, data)) {
+        return true;
+    }
+    if (ch4.regWrite(addr, data)) {
         return true;
     }
 
     switch(addr) {
-        case NR10: nr10 = data; break; 
-        case NR11: nr11 = data; break;
-        case NR12: nr12 = data; break;
-        case NR13: nr13 = data; break;
-        case NR14: nr14 = data; break;
-
-        case NR21: nr21 = data; break;
-        case NR22: nr22 = data; break;
-        case NR23: nr23 = data; break;
-        case NR24: nr24 = data; break;
-
-        case NR30: nr30 = data; break;
-        case NR31: nr31 = data; break;
-        case NR32: nr32 = data; break;
-        case NR33: nr33 = data; break;
-        case NR34: nr34 = data; break;
-
-        case NR41: nr41 = data; break;
-        case NR42: nr42 = data; break;
-        case NR43: nr43 = data; break;
-        case NR44: nr44 = data; break;
-
         case NR50: nr50 = data; break;
         case NR51: nr51 = data; break;
-        case NR52: 
-            nr52 = (nr52 & 0x7F) | (data & 0x80); 
-            break;
+        case NR52: nr52 = data; break;
         default:   return false;
     }
     
@@ -126,37 +144,30 @@ bool APU::regWrite(uint16_t addr, uint8_t data) {
 }
 
 bool APU::regRead(uint16_t addr, uint8_t &val) {
-    if (addr >= WAVE_PATTERN_START && addr < WAVE_PATTERN_END) {
-        val = wave_pattern_ram[addr & 0x000F];
+    if (ch1.regRead(addr, val)) {
+        return true;
+    }
+    if (ch2.regRead(addr, val)) {
+        return true;
+    }
+    if (ch3.regRead(addr, val)) {
+        return true;
+    }
+    if (ch4.regRead(addr, val)) {
         return true;
     }
 
     switch(addr) {
-        case NR10: val = nr10; break; 
-        case NR11: val = nr11; break;
-        case NR12: val = nr12; break;
-        // NR13 is write-only
-        case NR14: val = nr14; break;
-
-        case NR21: val = nr21; break;
-        case NR22: val = nr22; break;
-        // NR23 is write-only
-        case NR24: val = nr24; break;
-
-        case NR30: val = nr30; break;
-        case NR31: val = nr31; break;
-        case NR32: val = nr32; break;
-        // NR33 is write-only
-        case NR34: val = nr34; break;
-
-        case NR41: val = nr41; break;
-        case NR42: val = nr42; break;
-        case NR43: val = nr43; break;
-        case NR44: val = nr44; break;
-
         case NR50: val = nr50; break;
         case NR51: val = nr51; break;
-        case NR52: val = nr52; break;
+        case NR52: 
+            val = (nr52 & 0xF0) |
+                  (ch1.isEnabled() << 0) |
+                  (ch2.isEnabled() << 1) |
+                  (ch3.isEnabled() << 2) |
+                  (ch4.isEnabled() << 3); 
+                  
+            break;
         default:   return false;
     }
 

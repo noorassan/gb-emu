@@ -8,7 +8,7 @@
 #include "cartridge.h"
 #include "cpu.h"
 #include "ppu.h"
-#include "apu.h"
+#include "apu/apu.h"
 #include "timer.h"
 #include "controls.h"
 #include "gb_driver.h"
