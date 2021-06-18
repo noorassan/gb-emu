@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "mbc.h"
+#include "mbc/mbc.h"
 
 #define KB 1024
 

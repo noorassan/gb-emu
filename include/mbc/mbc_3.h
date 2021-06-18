@@ -1,6 +1,6 @@
 #include <cstdint>
 
-#include "mbc.h"
+#include "mbc/mbc.h"
 
 
 class MBC3 : public MemoryBankController {

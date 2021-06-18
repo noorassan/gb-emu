@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mbc.h"
+#include "mbc/mbc.h"
 
 
 class NoMBC : public MemoryBankController {
