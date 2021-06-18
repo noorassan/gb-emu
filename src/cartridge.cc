@@ -19,7 +19,7 @@ Cartridge::Cartridge(const std::string &filename) {
         
         // grab game title in a mildly sneaky manner
         char *title_ptr = (char *) &rom[0x0134];
-        title = std::string(title_ptr, 0x10);
+        title = std::string(title_ptr, 0x0F);
 
         // get number of rom/ram banks based on size read from cart
         setROMSize();
