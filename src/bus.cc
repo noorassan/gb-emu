@@ -135,7 +135,7 @@ void Bus::saveState(const std::string &filename) {
 
     std::ofstream ofs(filename);
 
-    ofs.write((char *) &ram[0], ram.size());
+    ofs.write((char *) ram.data(), ram.size());
     ofs.close();
 }
 
@@ -148,7 +148,7 @@ void Bus::loadState(const std::string &filename) {
     }
 
     std::vector<uint8_t> &ram = this->cart->getRAM();
-    ifs.read((char *) &ram[0], ram.size());
+    ifs.read((char *) ram.data(), ram.size());
     ifs.close();
 }
 
