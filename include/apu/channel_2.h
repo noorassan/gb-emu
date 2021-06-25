@@ -23,8 +23,8 @@ class Channel2 : public LengthChannel {
         bool isEnabled() override;
         void setEnabled(bool enabled) override;
 
-        uint16_t getLength() override;
-        void setLength(uint16_t length) override;
+        uint8_t getLength() override;
+        void setLength(uint8_t length) override;
 
         bool isLengthEnabled() override;
         void setLengthEnabled(bool enabled) override;

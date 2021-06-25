@@ -1,7 +1,7 @@
 #include "apu/apu_addrs.h"
 #include "apu/channel_1.h"
 
-Channel1::Channel1() : len_counter(this) {
+Channel1::Channel1() : len_counter(this), freq_sweep(this) {
     duty_cycles = {0xF0, 0x81, 0xE1, 0x7E};
 
 	reset();
@@ -47,6 +47,7 @@ void Channel1::reset() {
     enabled = true;
 
     len_counter.reset();
+    freq_sweep.reset();
 }
 
 void Channel1::clock(uint8_t clocks) {
@@ -61,6 +62,7 @@ void Channel1::clock(uint8_t clocks) {
     }
 
     len_counter.clock(clocks);
+    freq_sweep.clock(clocks);
 }
 
 uint8_t Channel1::getOutput() {
@@ -75,11 +77,11 @@ void Channel1::setEnabled(bool enabled) {
     this->enabled = enabled;
 }
 
-uint16_t Channel1::getLength() {
+uint8_t Channel1::getLength() {
     return nr11 & 0x3F;
 }
 
-void Channel1::setLength(uint16_t length) {
+void Channel1::setLength(uint8_t length) {
     nr11 = (nr11 & 0xC0) | (length & 0x3F); 
 }
 
@@ -95,22 +97,35 @@ void Channel1::setLengthEnabled(bool enabled) {
     }
 }
 
-void Channel1::trigger() {
-    setEnabled(true);
-
-    if (!getLength()) {
-        setLength(0x40);
-    }
-
-    // volume envelope timer reloaded
-    // reload volume from NR12
-
-    // lots of things happen with frequency sweep
-}
-
 uint16_t Channel1::getFrequency() {
      return nr13 + ((nr14 & 0x07) << 8);
  }
+
+void Channel1::setFrequency(uint16_t frequency) {
+    nr13 = (uint8_t) frequency;
+    nr14 = (nr14 & 0xF8) | ((frequency >> 8) & 0x07);
+}
+
+uint8_t Channel1::getSweepShift() {
+    return nr10 & 0x07;
+}
+
+uint8_t Channel1::getSweepPeriod() {
+    return (nr10 & 0x70) >> 4;
+}
+
+bool Channel1::getSweepNegate() {
+    return nr10 & 0x08;
+}
+
+void Channel1::trigger() {
+    setEnabled(true);
+
+    duty_timer = FREQ_TO_PERIOD(getFrequency());
+
+    len_counter.trigger();
+    freq_sweep.trigger();
+}
 
 uint8_t Channel1::getVolume() {
     return (nr12 & 0xF0) >> 4;

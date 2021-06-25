@@ -72,11 +72,11 @@ void Channel2::setEnabled(bool enabled) {
     this->enabled = enabled;
 }
 
-uint16_t Channel2::getLength() {
+uint8_t Channel2::getLength() {
     return nr21 & 0x3F;
 }
 
-void Channel2::setLength(uint16_t length) {
+void Channel2::setLength(uint8_t length) {
     nr21 = (nr21 & 0xC0) | (length & 0x3F); 
 }
 
@@ -95,14 +95,9 @@ void Channel2::setLengthEnabled(bool enabled) {
 void Channel2::trigger() {
     setEnabled(true);
 
-    if (!getLength()) {
-        setLength(0x40);
-    }
+    duty_timer = FREQ_TO_PERIOD(getFrequency());
 
-    // volume envelope timer reloaded
-    // reload volume from NR12
-
-    // lots of things happen with frequency sweep
+    len_counter.trigger();
 }
 
 uint16_t Channel2::getFrequency() {

@@ -15,6 +15,7 @@ class LengthCounter {
     public:
         void reset();
         void clock(uint8_t clocks);
+        void trigger();
 
     private:
         LengthChannel *ch;

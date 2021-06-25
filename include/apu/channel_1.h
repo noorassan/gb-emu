@@ -5,9 +5,10 @@
 
 #include "apu/channel.h"
 #include "apu/length_counter.h"
+#include "apu/frequency_sweep.h"
 
 
-class Channel1 : public LengthChannel {
+class Channel1 : public LengthChannel, public FrequencyChannel {
     public:
         Channel1();
         ~Channel1() = default;
@@ -23,19 +24,26 @@ class Channel1 : public LengthChannel {
         bool isEnabled() override;
         void setEnabled(bool enabled) override;
 
-        uint16_t getLength() override;
-        void setLength(uint16_t length) override;
+        uint8_t getLength() override;
+        void setLength(uint8_t length) override;
 
         bool isLengthEnabled() override;
         void setLengthEnabled(bool enabled) override;
 
+        uint16_t getFrequency() override;
+        void setFrequency(uint16_t frequency) override;
+
+        uint8_t getSweepShift() override;
+        uint8_t getSweepPeriod() override;
+        bool getSweepNegate() override;
+
     private:
         LengthCounter len_counter;
+        FrequencySweep freq_sweep;
 
     private:
         void trigger() override;
 
-        uint16_t getFrequency();
         uint8_t getVolume();
         uint8_t getDuty();
 

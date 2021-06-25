@@ -27,8 +27,8 @@ class LengthChannel : public Channel {
         virtual ~LengthChannel() = default;
 
     public:
-        virtual uint16_t getLength() = 0;
-        virtual void setLength(uint16_t length) = 0;
+        virtual uint8_t getLength() = 0;
+        virtual void setLength(uint8_t length) = 0;
 
         virtual bool isLengthEnabled() = 0;
         virtual void setLengthEnabled(bool enabled) = 0;
@@ -40,4 +40,10 @@ class FrequencyChannel : public Channel {
         virtual ~FrequencyChannel() = default;
 
     public:
+        virtual uint16_t getFrequency() = 0;
+        virtual void setFrequency(uint16_t frequency) = 0;
+
+        virtual uint8_t getSweepShift() = 0;
+        virtual uint8_t getSweepPeriod() = 0;
+        virtual bool getSweepNegate() = 0;
 };

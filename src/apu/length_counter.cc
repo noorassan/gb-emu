@@ -28,3 +28,9 @@ void LengthCounter::clock(uint8_t clocks) {
         length_timer -= clocks;
     }
 }
+
+void LengthCounter::trigger() {
+    if (!ch->getLength()) {
+        ch->setLength(0xFF);
+    }
+}

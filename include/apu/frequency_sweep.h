@@ -9,9 +9,21 @@ class FrequencyChannel;
 
 class FrequencySweep {
     public:
-        FrequencySweep();
+        FrequencySweep(FrequencyChannel *ch);
         ~FrequencySweep() = default;
 
+    public:
+        void reset();
+        void clock(uint8_t clocks);
+        void trigger();
+
     private:
-    
-}
+        uint16_t recalculateFrequency();
+
+    private:
+        FrequencyChannel *ch;
+
+        uint16_t shadow_register;
+        uint16_t timer;
+        bool enabled;
+};
