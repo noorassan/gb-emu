@@ -15,7 +15,7 @@ bool MBC3::read(uint16_t addr, uint32_t &mapped_addr, bool &rom_read) {
         return true;
     } else if (addr >= 0x4000 && addr < 0x8000) {
         rom_read = true;
-        mapped_addr = addr + (rom_bank - 1) * 0x4000;
+        mapped_addr = (addr & 0x3FFF) + rom_bank * 0x4000;
         return true;
     } else if (addr >= 0xA000 && addr < 0xC000 && ram_enabled) {
         rom_read = false;

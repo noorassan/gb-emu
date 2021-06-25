@@ -29,7 +29,7 @@ Cartridge::Cartridge(const std::string &filename) {
         setMBC();
 
         // read in the rest of the ROM
-        ifs.read((char *) rom.data() + 0x200, rom.size() - 0x200);
+        ifs.read(((char *) rom.data()) + 0x200, rom.size() - 0x200);
     } else {
         throw std::invalid_argument("Cartridge could not be read.");
     }
@@ -74,9 +74,10 @@ std::string Cartridge::getTitle() {
 void Cartridge::setROMSize() {
     // not the actual size in kB
     uint8_t rom_size = rom[0x0148];
-    uint8_t num_banks;
-    if (rom_size <= 6) {
-        num_banks = 2 << (rom_size);
+    uint16_t num_banks;
+
+    if (rom_size <= 8) {
+        num_banks = 2 << rom_size;
     } else if (rom_size == 0x52) {
         num_banks = 72;
     } else if (rom_size == 0x53) {
