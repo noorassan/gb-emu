@@ -1,14 +1,16 @@
 #include "bus.h"
 #include "sdl_gb_driver.h"
 
+#define SCALE_FACTOR 3
+
 SDLGameboyDriver::SDLGameboyDriver(std::string title, uint32_t sampling_rate) : GameboyDriver(sampling_rate) {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
     window = SDL_CreateWindow(title.c_str(), 
                      SDL_WINDOWPOS_UNDEFINED,
                      SDL_WINDOWPOS_UNDEFINED,
-                     SCREEN_WIDTH * 2,
-                     SCREEN_HEIGHT * 2,
+                     SCREEN_WIDTH * SCALE_FACTOR,
+                     SCREEN_HEIGHT * SCALE_FACTOR,
                      SDL_WINDOW_OPENGL);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -16,8 +18,8 @@ SDLGameboyDriver::SDLGameboyDriver(std::string title, uint32_t sampling_rate) : 
     texture = SDL_CreateTexture(renderer,
                                 SDL_PIXELFORMAT_ARGB8888,
                                 SDL_TEXTUREACCESS_STREAMING,
-                                SCREEN_WIDTH * 2,
-                                SCREEN_HEIGHT * 2);
+                                SCREEN_WIDTH * SCALE_FACTOR,
+                                SCREEN_HEIGHT * SCALE_FACTOR);
 
     int32_t num_keys;
     keyboard_state = SDL_GetKeyboardState(&num_keys);
@@ -81,12 +83,11 @@ uint32_t SDLGameboyDriver::getARGBColor(COLOR color) {
 }
 
 void SDLGameboyDriver::draw(COLOR color, uint8_t x, uint8_t y) {
-    uint8_t scale_factor = 2;
     if (x < SCREEN_WIDTH && y < SCREEN_HEIGHT) {
         uint32_t argb_color = getARGBColor(color);
-        for (uint8_t y_disp = 0; y_disp < scale_factor; y_disp++) {
-            for (uint8_t x_disp = 0; x_disp < scale_factor; x_disp++) {
-                uint32_t i = ((x * scale_factor) + x_disp) + ((y * scale_factor) + y_disp) * (SCREEN_WIDTH * scale_factor);
+        for (uint8_t y_disp = 0; y_disp < SCALE_FACTOR; y_disp++) {
+            for (uint8_t x_disp = 0; x_disp < SCALE_FACTOR; x_disp++) {
+                uint32_t i = ((x * SCALE_FACTOR) + x_disp) + ((y * SCALE_FACTOR) + y_disp) * (SCREEN_WIDTH * SCALE_FACTOR);
                 pixels[i] = argb_color;
             }
         }
