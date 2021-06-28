@@ -26,20 +26,15 @@ class GameboyDriver {
         // Push an audio sample
         virtual void pushSample(AudioOutput output) = 0;
 
-        // Get the audio sampling rate desired by the driver (provided in Hz)
-        uint32_t getSamplingRate() {
-            return sampling_rate;
-        }
-
         // Return true if a QUIT input has been received
         virtual bool quitReceived() = 0;
 
         // Returns a ControllerState representing currently pressed controls
         virtual ControllerState pollControls() = 0;
 
+    public:
+        const uint32_t sampling_rate;
+
     protected:
         bool quit;
-
-    private:
-        const uint32_t sampling_rate;
 };

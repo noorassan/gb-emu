@@ -9,10 +9,12 @@
 #include "gb_driver.h"
 
 #define SAMPLE_SIZE 2048
+#define SAMPLE_RATE 48000
+#define SCALE_FACTOR 3
 
 class SDLGameboyDriver : public GameboyDriver {
     public:
-        SDLGameboyDriver(std::string title, uint32_t sampling_rate);
+        SDLGameboyDriver(std::string title);
         ~SDLGameboyDriver();
 
     public:

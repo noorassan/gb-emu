@@ -6,7 +6,7 @@
 APU::APU(GameboyDriver *driver) {
     this->driver = driver;
     duty_cycles = {0xF0, 0x81, 0xE1, 0x7E};
-    sample_frequency = GB_CLOCK_RATE / this->driver->getSamplingRate();
+    sample_frequency = GB_CLOCK_RATE / this->driver->sampling_rate;
 
     reset();
 }
