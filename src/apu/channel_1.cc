@@ -43,7 +43,7 @@ void Channel1::reset() {
     nr14 = 0xBF;
 
     duty_pointer = 0;
-    duty_timer = FREQ_TO_PERIOD(getFrequency());
+    duty_timer = SQUARE_FREQ_TO_PERIOD(getFrequency());
     enabled = true;
 
     len_counter.reset();
@@ -51,7 +51,7 @@ void Channel1::reset() {
 }
 
 void Channel1::clock(uint8_t clocks) {
-    uint32_t period = FREQ_TO_PERIOD(getFrequency());
+    uint32_t period = SQUARE_FREQ_TO_PERIOD(getFrequency());
     if (clocks >= duty_timer) {
         duty_pointer += 1 + ((clocks - duty_timer) / period);
         duty_pointer %= 8;
@@ -121,7 +121,7 @@ bool Channel1::getSweepNegate() {
 void Channel1::trigger() {
     setEnabled(true);
 
-    duty_timer = FREQ_TO_PERIOD(getFrequency());
+    duty_timer = SQUARE_FREQ_TO_PERIOD(getFrequency());
 
     len_counter.trigger();
     freq_sweep.trigger();

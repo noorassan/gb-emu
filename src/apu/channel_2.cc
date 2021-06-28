@@ -40,14 +40,14 @@ void Channel2::reset() {
     nr24 = 0xBF;
 
     duty_pointer = 0;
-    duty_timer = FREQ_TO_PERIOD(getFrequency());
+    duty_timer = SQUARE_FREQ_TO_PERIOD(getFrequency());
     enabled = true;
 
     len_counter.reset();
 }
 
 void Channel2::clock(uint8_t clocks) {
-    uint32_t period = FREQ_TO_PERIOD(getFrequency());
+    uint32_t period = SQUARE_FREQ_TO_PERIOD(getFrequency());
     if (clocks >= duty_timer) {
         duty_pointer += 1 + ((clocks - duty_timer) / period);
         duty_pointer %= 8;
@@ -95,7 +95,7 @@ void Channel2::setLengthEnabled(bool enabled) {
 void Channel2::trigger() {
     setEnabled(true);
 
-    duty_timer = FREQ_TO_PERIOD(getFrequency());
+    duty_timer = SQUARE_FREQ_TO_PERIOD(getFrequency());
 
     len_counter.trigger();
 }

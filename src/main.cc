@@ -129,6 +129,12 @@ void SDLGameboyDriver::pushSample(AudioOutput output) {
     unprocessed_sample = output.ch2_right / 100.0F;
     SDL_MixAudioFormat((uint8_t *) &right_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 100);
 
+    // mix channel 3 
+    unprocessed_sample = output.ch3_left / 100.0F;
+    SDL_MixAudioFormat((uint8_t *) &left_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 100);
+    unprocessed_sample = output.ch3_right / 100.0F;
+    SDL_MixAudioFormat((uint8_t *) &right_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 100);
+
     // push left and right samples
     samples[samples_stored] = left_sample;
     samples[samples_stored + 1] = right_sample;

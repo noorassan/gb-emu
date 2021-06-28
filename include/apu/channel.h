@@ -2,7 +2,8 @@
 
 #include <cstdint>
 
-#define FREQ_TO_PERIOD(x) (2048 - x) * 4
+#define SQUARE_FREQ_TO_PERIOD(x) (2048 - x) * 4
+#define WAVE_FREQ_TO_PERIOD(x) (2048 - x) * 2
 
 
 class Channel {
