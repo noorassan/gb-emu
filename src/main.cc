@@ -1,9 +1,8 @@
 #include "bus.h"
 #include "sdl_gb_driver.h"
 
-#define SCALE_FACTOR 3
 
-SDLGameboyDriver::SDLGameboyDriver(std::string title, uint32_t sampling_rate) : GameboyDriver(sampling_rate) {
+SDLGameboyDriver::SDLGameboyDriver(std::string title) : GameboyDriver(SAMPLE_RATE) {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
     window = SDL_CreateWindow(title.c_str(), 
@@ -29,7 +28,7 @@ SDLGameboyDriver::SDLGameboyDriver(std::string title, uint32_t sampling_rate) : 
     SDL_LockTexture(texture, nullptr, (void **) &pixels, &pitch);
 
     SDL_AudioSpec audio_settings;
-    audio_settings.freq = getSamplingRate();
+    audio_settings.freq = sampling_rate;
     audio_settings.format = AUDIO_F32SYS;
     audio_settings.channels = 2;
     audio_settings.callback = nullptr;
@@ -104,12 +103,16 @@ void SDLGameboyDriver::render() {
     int pitch;
     SDL_LockTexture(texture, nullptr, (void **) &pixels, &pitch);
     
-    std::this_thread::sleep_until(time + std::chrono::nanoseconds(16742706));
+    // don't sleep if we don't have enough audio samples
+    if (SDL_GetQueuedAudioSize(audio_device_id) > sampling_rate) {
+        std::this_thread::sleep_until(time + std::chrono::nanoseconds(16742706));
+    }
+    
     time = std::chrono::steady_clock::now();
 }
 
 void SDLGameboyDriver::pushSample(AudioOutput output) {
-    // samples are only provided at the rate that we request in getSamplingRate, so we don't need to downsample
+    // samples are only provided at the rate that we request in sampling_rate, so we don't need to downsample
     float unprocessed_sample;
     float left_sample = 0;
     float right_sample = 0;
@@ -132,11 +135,6 @@ void SDLGameboyDriver::pushSample(AudioOutput output) {
     samples_stored += 2;
 
     if (samples_stored >= SAMPLE_SIZE) {
-        //// ensure that audio queue doesn't get overfilled
-        //while (SDL_GetQueuedAudioSize(audio_device_id) >= SAMPLE_SIZE * sizeof(float)) {
-        //    SDL_Delay(1);
-        //}
-
         SDL_QueueAudio(audio_device_id, samples.data(), SAMPLE_SIZE * sizeof(float));
         samples_stored = 0;
     }
@@ -178,7 +176,7 @@ int main(int argc, char **argv) {
     std::string save_filename = gb_filename.substr(0, gb_filename.find_last_of(".")) + ".sav";
 
     std::shared_ptr<Cartridge> cart = std::make_shared<Cartridge>(gb_filename);
-    SDLGameboyDriver driver = SDLGameboyDriver(cart->getTitle(), 48000);
+    SDLGameboyDriver driver = SDLGameboyDriver(cart->getTitle());
 
     Bus bus(&driver);
     bus.insertCartridge(cart);
