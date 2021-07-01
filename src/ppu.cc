@@ -5,6 +5,8 @@
 PPU::PPU(GameboyDriver *driver) {
     this->driver = driver;
     pixel_line.reserve(SCREEN_WIDTH);
+
+    reset();
 }
 
 void PPU::reset() {

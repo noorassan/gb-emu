@@ -1,7 +1,7 @@
 #include "apu/frequency_sweep.h"
 #include "apu/channel.h"
 
-FrequencySweep::FrequencySweep(FrequencyChannel *ch) {
+FrequencySweep::FrequencySweep(SweepChannel *ch) {
     this->ch = ch;
     reset();
 }

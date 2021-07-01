@@ -34,7 +34,7 @@ SDLGameboyDriver::SDLGameboyDriver(std::string title) : GameboyDriver(SAMPLE_RAT
     audio_settings.callback = nullptr;
     samples_stored = 0;
 
-    const char *audio_device_name = SDL_GetAudioDeviceName(0, 0);;
+    const char *audio_device_name = SDL_GetAudioDeviceName(1, 0);
     audio_device_id = SDL_OpenAudioDevice(audio_device_name, false, &audio_settings, nullptr, false);
     SDL_PauseAudioDevice(audio_device_id, false);
     std::cout << audio_device_name << std::endl;
@@ -129,10 +129,16 @@ void SDLGameboyDriver::pushSample(AudioOutput output) {
     unprocessed_sample = output.ch2_right / 100.0F;
     SDL_MixAudioFormat((uint8_t *) &right_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 100);
 
-    // mix channel 3 
+    // mix channel 3
     unprocessed_sample = output.ch3_left / 100.0F;
     SDL_MixAudioFormat((uint8_t *) &left_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 100);
     unprocessed_sample = output.ch3_right / 100.0F;
+    SDL_MixAudioFormat((uint8_t *) &right_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 100);
+
+    // mix channel 4
+    unprocessed_sample = output.ch4_left / 100.0F;
+    SDL_MixAudioFormat((uint8_t *) &left_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 100);
+    unprocessed_sample = output.ch4_right / 100.0F;
     SDL_MixAudioFormat((uint8_t *) &right_sample, (uint8_t *) &unprocessed_sample, AUDIO_F32SYS, sizeof(float), SDL_MIX_MAXVOLUME / 100);
 
     // push left and right samples
@@ -186,7 +192,6 @@ int main(int argc, char **argv) {
 
     Bus bus(&driver);
     bus.insertCartridge(cart);
-    bus.reset();
 
     // load save file if it exists
     bus.loadState(save_filename);

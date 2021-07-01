@@ -36,9 +36,9 @@ class LengthChannel : public Channel {
 };
 
 
-class FrequencyChannel : public Channel {
+class SweepChannel : public Channel {
     public:
-        virtual ~FrequencyChannel() = default;
+        virtual ~SweepChannel() = default;
 
     public:
         virtual uint16_t getFrequency() = 0;
@@ -47,4 +47,15 @@ class FrequencyChannel : public Channel {
         virtual uint8_t getSweepShift() = 0;
         virtual uint8_t getSweepPeriod() = 0;
         virtual bool getSweepNegate() = 0;
+};
+
+class EnvelopeChannel : public Channel {
+    public:
+        virtual ~EnvelopeChannel() = default;
+
+    public:
+        virtual uint8_t getVolume() = 0;
+
+        virtual uint8_t getEnvelopePeriod() = 0;
+        virtual bool isAddModeEnabled() = 0;
 };

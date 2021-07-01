@@ -4,12 +4,12 @@
 
 #define FREQ_CLOCKS 32768 
 
-class FrequencyChannel;
+class SweepChannel;
 
 
 class FrequencySweep {
     public:
-        FrequencySweep(FrequencyChannel *ch);
+        FrequencySweep(SweepChannel *ch);
         ~FrequencySweep() = default;
 
     public:
@@ -21,7 +21,7 @@ class FrequencySweep {
         uint16_t recalculateFrequency();
 
     private:
-        FrequencyChannel *ch;
+        SweepChannel *ch;
 
         uint16_t shadow_register;
         uint16_t timer;

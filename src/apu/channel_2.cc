@@ -1,7 +1,7 @@
 #include "apu/apu_addrs.h"
 #include "apu/channel_2.h"
 
-Channel2::Channel2() : len_counter(this) {
+Channel2::Channel2() : len_counter(this), envelope(this) {
     duty_cycles = {0xF0, 0x81, 0xE1, 0x7E};
 
 	reset();
@@ -44,6 +44,7 @@ void Channel2::reset() {
     enabled = true;
 
     len_counter.reset();
+    envelope.reset();
 }
 
 void Channel2::clock(uint8_t clocks) {
@@ -58,10 +59,11 @@ void Channel2::clock(uint8_t clocks) {
     }
 
     len_counter.clock(clocks);
+    envelope.clock(clocks);
 }
 
 uint8_t Channel2::getOutput() {
-    return ((duty_cycles[getDuty()] >> duty_pointer) & 0x01) * getVolume();
+    return ((duty_cycles[getDuty()] >> duty_pointer) & 0x01) * envelope.getVolume();
 }
 
 bool Channel2::isEnabled() {
@@ -92,21 +94,30 @@ void Channel2::setLengthEnabled(bool enabled) {
     }
 }
 
+uint8_t Channel2::getVolume() {
+    return (nr22 & 0xF0) >> 4;
+}
+
+uint8_t Channel2::getEnvelopePeriod() {
+    return nr22 & 0x07;
+}
+
+bool Channel2::isAddModeEnabled() {
+    return nr22 & 0x08;
+}
+
 void Channel2::trigger() {
     setEnabled(true);
 
     duty_timer = SQUARE_FREQ_TO_PERIOD(getFrequency());
 
     len_counter.trigger();
+    envelope.trigger();
 }
 
 uint16_t Channel2::getFrequency() {
      return nr23 + ((nr24 & 0x07) << 8);
  }
-
-uint8_t Channel2::getVolume() {
-    return (nr22 & 0xF0) >> 4;
-}
 
  uint8_t Channel2::getDuty() {
      return (nr21 & 0xC0) >> 6;

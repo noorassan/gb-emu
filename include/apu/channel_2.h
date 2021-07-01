@@ -5,9 +5,10 @@
 
 #include "apu/channel.h"
 #include "apu/length_counter.h"
+#include "apu/volume_envelope.h"
 
 
-class Channel2 : public LengthChannel {
+class Channel2 : public LengthChannel, public EnvelopeChannel {
     public:
         Channel2();
         ~Channel2() = default;
@@ -29,14 +30,19 @@ class Channel2 : public LengthChannel {
         bool isLengthEnabled() override;
         void setLengthEnabled(bool enabled) override;
 
+        uint8_t getVolume() override;
+
+        uint8_t getEnvelopePeriod() override;
+        bool isAddModeEnabled() override;
+
     private:
         LengthCounter len_counter;
+        VolumeEnvelope envelope;
 
     private:
         void trigger() override;
 
         uint16_t getFrequency();
-        uint8_t getVolume();
         uint8_t getDuty();
 
     private:

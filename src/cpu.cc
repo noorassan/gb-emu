@@ -564,6 +564,8 @@ CPU::CPU() {
         {"SET 7, (HL)",     16, 1,   (OpArg) 7,     &hl,            &CPU::SET_MEM},
         {"SET 7, A",        8,  1,   (OpArg) 7,     &a,             &CPU::SET_REG_8},
     };
+
+    reset();
 }
 
 // read & write to/from bus

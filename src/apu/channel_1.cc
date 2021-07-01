@@ -1,7 +1,7 @@
 #include "apu/apu_addrs.h"
 #include "apu/channel_1.h"
 
-Channel1::Channel1() : len_counter(this), freq_sweep(this) {
+Channel1::Channel1() : len_counter(this), freq_sweep(this), envelope(this) {
     duty_cycles = {0xF0, 0x81, 0xE1, 0x7E};
 
 	reset();
@@ -48,6 +48,7 @@ void Channel1::reset() {
 
     len_counter.reset();
     freq_sweep.reset();
+    envelope.reset();
 }
 
 void Channel1::clock(uint8_t clocks) {
@@ -63,10 +64,11 @@ void Channel1::clock(uint8_t clocks) {
 
     len_counter.clock(clocks);
     freq_sweep.clock(clocks);
+    envelope.clock(clocks);
 }
 
 uint8_t Channel1::getOutput() {
-    return ((duty_cycles[getDuty()] >> duty_pointer) & 0x01) * getVolume();
+    return ((duty_cycles[getDuty()] >> duty_pointer) & 0x01) * envelope.getVolume();
 }
 
 bool Channel1::isEnabled() {
@@ -118,6 +120,18 @@ bool Channel1::getSweepNegate() {
     return nr10 & 0x08;
 }
 
+uint8_t Channel1::getVolume() {
+    return (nr12 & 0xF0) >> 4;
+}
+
+uint8_t Channel1::getEnvelopePeriod() {
+    return nr12 & 0x07;
+}
+
+bool Channel1::isAddModeEnabled() {
+    return nr12 & 0x08;
+}
+
 void Channel1::trigger() {
     setEnabled(true);
 
@@ -125,10 +139,7 @@ void Channel1::trigger() {
 
     len_counter.trigger();
     freq_sweep.trigger();
-}
-
-uint8_t Channel1::getVolume() {
-    return (nr12 & 0xF0) >> 4;
+    envelope.trigger();
 }
 
  uint8_t Channel1::getDuty() {

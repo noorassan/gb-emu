@@ -9,6 +9,8 @@ Bus::Bus(GameboyDriver *driver) : ppu(driver), apu(driver), controls(driver) {
     ppu.connectBus(this);
     timer.connectBus(this);
     controls.connectBus(this);
+
+    reset();
 }
 
 void Bus::cpuWrite(uint16_t addr, uint8_t data) {

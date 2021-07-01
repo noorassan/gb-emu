@@ -6,9 +6,10 @@
 #include "apu/channel.h"
 #include "apu/length_counter.h"
 #include "apu/frequency_sweep.h"
+#include "apu/volume_envelope.h"
 
 
-class Channel1 : public LengthChannel, public FrequencyChannel {
+class Channel1 : public LengthChannel, public SweepChannel, public EnvelopeChannel {
     public:
         Channel1();
         ~Channel1() = default;
@@ -37,14 +38,19 @@ class Channel1 : public LengthChannel, public FrequencyChannel {
         uint8_t getSweepPeriod() override;
         bool getSweepNegate() override;
 
+        uint8_t getVolume() override;
+
+        uint8_t getEnvelopePeriod() override;
+        bool isAddModeEnabled() override;
+
     private:
         LengthCounter len_counter;
         FrequencySweep freq_sweep;
+        VolumeEnvelope envelope;
 
     private:
         void trigger() override;
 
-        uint8_t getVolume();
         uint8_t getDuty();
 
     private:
