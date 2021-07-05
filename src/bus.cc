@@ -114,8 +114,8 @@ void Bus::run() {
         cycles = 0;
         while (cycles <= POLL_INTERVAL) {
             uint8_t elapsed = cpu.clock();
-            ppu.clock(elapsed);
             apu.clock(elapsed);
+            ppu.clock(elapsed);
             timer.clock(elapsed);
 
             cycles += elapsed;
