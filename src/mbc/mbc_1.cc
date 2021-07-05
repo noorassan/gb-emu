@@ -1,29 +1,29 @@
+#include "bit_utils.h"
 #include "mbc/mbc_1.h"
 
-MBC1::MBC1() {
+MBC1::MBC1(uint16_t rom_banks, uint8_t ram_banks) : MBC(rom_banks, ram_banks) {
     ram_enabled = false;
-    rom_mode = true;
+    ram_mode = false;
 
-    bank_specifier = 0;
+    bank_reg_1 = 0x01;
+    bank_reg_2 = 0x00;
 }
 
-bool MBC1::read(uint16_t addr, uint32_t &mapped_addr, bool &rom_read) {
+bool MBC1::read(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) {
     if (addr >= 0x0000 && addr < 0x4000) {
         mapped_addr = addr;
-        rom_read = true;
         return true;
     } else if (addr >= 0x4000 && addr < 0x8000) {
-        uint8_t bank = getROMBank();
-        rom_read = true;
-        mapped_addr = (addr & 0x3FFF) + bank * 0x4000;
+        mapped_addr = mapROMAddress(addr, getROMBank());
         return true;
     } else if (addr >= 0xA000 && addr < 0xC000 && ram_enabled) {
-        uint8_t bank = getRAMBank();
-        rom_read = false;
-        mapped_addr = (addr & 0x1FFF) + bank * 0x2000;
-        return true;
+        if (ram_enabled) {
+            mapped_addr = mapRAMAddress(addr, getRAMBank());
+            return true;
+        }
     }
 
+    data = 0x00;
     return false;
 }
 
@@ -31,42 +31,41 @@ bool MBC1::write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) {
     if (addr >= 0x0000 && addr < 0x2000) {
         ram_enabled = (data & 0x0F) == 0x0A;
     } else if (addr >= 0x2000 && addr < 0x4000) {
-        bank_specifier &= 0xE0;          // clear lower 5 bits
-        bank_specifier |= (data & 0x1F); // set lower 5 bits
+        //  0 -> Bank 1; 0x20 -> Bank 0x21; 0x40 -> Bank 0x41; 0x60 -> Bank 0x61
+        if (data % 0x20 == 0) data++;
+        bank_reg_1 = data & 0x1F;
     } else if (addr >= 0x4000 && addr < 0x6000) {
-        bank_specifier &= 0x1F;               // clear upper 3 bits
-        bank_specifier |= (data & 0x03) << 5; // set bits 5 & 6
+        bank_reg_2 = data & 0x03;
     } else if (addr >= 0x6000 && addr < 0x8000) {
-        rom_mode = (data == 0x00);
+        ram_mode = data;
     } else if (addr >= 0xA000 && addr < 0xC000) {
-        uint8_t bank = getRAMBank();
-        mapped_addr = (addr & 0x1FFF) + bank * 0x2000;
-        return true;
+        if (ram_enabled) {
+            mapped_addr = mapRAMAddress(addr, getRAMBank());
+            return true;
+        }
     }
 
     return false;
 }
 
 uint8_t MBC1::getROMBank() {
-    uint8_t val;
-    if (rom_mode) {
-        val = bank_specifier & 0x7F;
+    uint8_t bank;
+    if (ram_mode) {
+        bank = bank_reg_1;
     } else {
-        val = bank_specifier & 0x1F;
+        bank = bank_reg_1 + (bank_reg_2 << 5);
     }
 
-    //  0 -> Bank 1; 0x20 -> Bank 0x21; 0x40 -> Bank 0x41; 0x60 -> Bank 0x61
-    if (val % 0x20 == 0) {
-        return val + 1;
-    } else {
-        return val;
-    }
+    // masked to fit number of rom banks
+    bank &= (highestOrderBit(rom_banks) - 1);
+    return bank;
 }
 
 uint8_t MBC1::getRAMBank() {
-    if (rom_mode) {
-        return 0;
-    } else {
-        return (bank_specifier >> 5) & 0x03;
+    if (ram_mode) {
+        // masked to fit number of ram banks
+        return bank_reg_2 & (highestOrderBit(ram_banks) - 1);
     }
+
+    return 0;
 }

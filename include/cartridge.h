@@ -18,10 +18,13 @@ public:
 private:
     std::string title;
 
+    uint16_t rom_banks;
+    uint8_t ram_banks;
+
     std::vector<uint8_t> rom;
     std::vector<uint8_t> ram;
 
-    std::shared_ptr<MemoryBankController> mbc;
+    std::shared_ptr<MBC> mbc;
 
 public:
     uint8_t read(uint16_t addr);

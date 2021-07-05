@@ -37,17 +37,25 @@ Cartridge::Cartridge(const std::string &filename) {
 
 uint8_t Cartridge::read(uint16_t addr) {
     uint32_t mapped_address;
-    bool rom_read;
+    uint8_t data = 0x00;
 
-    if (mbc->read(addr, mapped_address, rom_read)) {
-        if (rom_read) {
+    if (mbc->read(addr, mapped_address, data)) {
+        if (addr <= 0x8000) {
+            if (mapped_address >= rom.size()) {
+                throw std::runtime_error("Attempted to read past end of ROM");
+            }
+
             return rom[mapped_address];
         } else {
+            if (mapped_address >= ram.size()) {
+                throw std::runtime_error("Attempted to read past end of RAM");
+            }
+
             return ram[mapped_address];
         }
     }
 
-    return 0;
+    return data;
 }
 
 void Cartridge::write(uint16_t addr, uint8_t data) {
@@ -55,9 +63,12 @@ void Cartridge::write(uint16_t addr, uint8_t data) {
 
     // We need to call mbc->write because this might be a write to ROM
     // that alters the MBC state. If the MBC tells us that this is a write
-    // we actually need to perform then we check that we actually have cart
-    // RAM and then perform it.
-    if (mbc->write(addr, data, mapped_address) && ram.size() > 0) {
+    // we actually need to perform then we do so.
+    if (mbc->write(addr, data, mapped_address)) {
+        if (mapped_address >= ram.size()) {
+            throw std::runtime_error("Attempted to write past end of RAM");
+        }
+
         ram[mapped_address] = data;
     }
 }
@@ -74,41 +85,36 @@ std::string Cartridge::getTitle() {
 void Cartridge::setROMSize() {
     // not the actual size in kB
     uint8_t rom_size = rom[0x0148];
-    uint16_t num_banks;
 
     if (rom_size <= 8) {
-        num_banks = 2 << rom_size;
-    } else if (rom_size == 0x52) {
-        num_banks = 72;
-    } else if (rom_size == 0x53) {
-        num_banks = 80;
-    } else if (rom_size == 0x54) {
-        num_banks = 96;
+        rom_banks = 2 << rom_size;
     } else {
         throw std::invalid_argument("Invalid ROM size value read from cartridge.");
     }
 
-    rom.resize(num_banks * 16 * KB);
+    rom.resize(rom_banks * 16 * KB);
     return;
 }
 
 void Cartridge::setRAMSize() {
     // not the actual size in kB
     uint8_t ram_size = rom[0x0149];
-    uint8_t num_banks;
+
     if (ram_size == 0) {
-        num_banks = 0;
-    } else if (ram_size <= 2) {
-        num_banks = 1;
+        ram_banks = 0;
+    } else if (ram_size == 2) {
+        ram_banks = 1;
     } else if (ram_size == 3) {
-        num_banks = 4;
+        ram_banks = 4;
     } else if (ram_size == 4) {
-        num_banks = 16;
+        ram_banks = 16;
+    } else if (ram_size == 5) {
+        ram_banks = 8;
     } else {
         throw std::invalid_argument("Invalid RAM size value read from cartridge.");
     }
 
-    ram.resize(num_banks * 8 * KB);
+    ram.resize(ram_banks * 8 * KB);
     for (auto &i : ram) i = 0x00;
     return;
 }
@@ -117,11 +123,11 @@ void Cartridge::setMBC() {
     uint8_t mbc_type = rom[0x0147];
 
     if (mbc_type == 0) {
-        mbc = std::make_shared<NoMBC>();
+        mbc = std::make_shared<NoMBC>(rom_banks, ram_banks);
     } else if (mbc_type >= 0x01 && mbc_type <= 0x03){
-        mbc = std::make_shared<MBC1>();
+        mbc = std::make_shared<MBC1>(rom_banks, ram_banks);
     } else if (mbc_type >= 0x0F && mbc_type <= 0x13) {
-       mbc = std::make_shared<MBC3>();
+       mbc = std::make_shared<MBC3>(rom_banks, ram_banks);
     } else {
         throw std::invalid_argument("Invalid Memory Bank Controller type read from cartridge.");
     }
