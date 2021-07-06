@@ -23,7 +23,7 @@ bool MBC1::read(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) {
         }
     }
 
-    data = 0x00;
+    data = 0xFF;
     return false;
 }
 
