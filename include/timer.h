@@ -14,21 +14,20 @@ class Bus;
 
 class Timer {
 public:
-    Timer() = default;
+    Timer();
     ~Timer() = default;
 
 public:
-    void connectBus(Bus *bus);
     void clock(uint8_t cycles);
+    void reset();
 
     // Returns true if a r/w to addr is handled by the timer
     bool regWrite(uint16_t addr, uint8_t data);
     bool regRead(uint16_t addr, uint8_t &val);
 
-private:
-    void write(uint16_t addr, uint8_t data);
-    uint8_t read(uint16_t addr);
+    void connectBus(Bus *bus);
 
+private:
     uint8_t getDIVBitPos();
 
     // timer registers
