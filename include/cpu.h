@@ -47,8 +47,13 @@ private:
     // Set and reset with EI and DI instructions
     bool ime;
 
+    // Setting ime with EI is delayed by one instruction
+    bool ei_called;
+
     bool halted;
     bool stopped;
+
+    bool halt_bug;
 
     uint16_t fetched;
 

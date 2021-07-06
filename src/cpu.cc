@@ -366,7 +366,7 @@ CPU::CPU() {
         {"BIT 0, E",        8,  1,   0,             &e,             &CPU::BIT_REG_8},
         {"BIT 0, H",        8,  1,   0,             &h,             &CPU::BIT_REG_8},
         {"BIT 0, L",        8,  1,   0,             &l,             &CPU::BIT_REG_8},
-        {"BIT 0, (HL)",     16, 1,   0,             &hl,            &CPU::BIT_MEM},
+        {"BIT 0, (HL)",     12, 1,   0,             &hl,            &CPU::BIT_MEM},
         {"BIT 0, A",        8,  1,   0,             &a,             &CPU::BIT_REG_8},
         {"BIT 1, B",        8,  1,   (OpArg) 1,     &b,             &CPU::BIT_REG_8},
         {"BIT 1, C",        8,  1,   (OpArg) 1,     &c,             &CPU::BIT_REG_8},
@@ -374,7 +374,7 @@ CPU::CPU() {
         {"BIT 1, E",        8,  1,   (OpArg) 1,     &e,             &CPU::BIT_REG_8},
         {"BIT 1, H",        8,  1,   (OpArg) 1,     &h,             &CPU::BIT_REG_8},
         {"BIT 1, L",        8,  1,   (OpArg) 1,     &l,             &CPU::BIT_REG_8},
-        {"BIT 1, (HL)",     16, 1,   (OpArg) 1,     &hl,            &CPU::BIT_MEM},
+        {"BIT 1, (HL)",     12, 1,   (OpArg) 1,     &hl,            &CPU::BIT_MEM},
         {"BIT 1, A",        8,  1,   (OpArg) 1,     &a,             &CPU::BIT_REG_8},
         // 0x50
         {"BIT 2, B",        8,  1,   (OpArg) 2,     &b,             &CPU::BIT_REG_8},
@@ -383,7 +383,7 @@ CPU::CPU() {
         {"BIT 2, E",        8,  1,   (OpArg) 2,     &e,             &CPU::BIT_REG_8},
         {"BIT 2, H",        8,  1,   (OpArg) 2,     &h,             &CPU::BIT_REG_8},
         {"BIT 2, L",        8,  1,   (OpArg) 2,     &l,             &CPU::BIT_REG_8},
-        {"BIT 2, (HL)",     16, 1,   (OpArg) 2,     &hl,            &CPU::BIT_MEM},
+        {"BIT 2, (HL)",     12, 1,   (OpArg) 2,     &hl,            &CPU::BIT_MEM},
         {"BIT 2, A",        8,  1,   (OpArg) 2,     &a,             &CPU::BIT_REG_8},
         {"BIT 3, B",        8,  1,   (OpArg) 3,     &b,             &CPU::BIT_REG_8},
         {"BIT 3, C",        8,  1,   (OpArg) 3,     &c,             &CPU::BIT_REG_8},
@@ -391,7 +391,7 @@ CPU::CPU() {
         {"BIT 3, E",        8,  1,   (OpArg) 3,     &e,             &CPU::BIT_REG_8},
         {"BIT 3, H",        8,  1,   (OpArg) 3,     &h,             &CPU::BIT_REG_8},
         {"BIT 3, L",        8,  1,   (OpArg) 3,     &l,             &CPU::BIT_REG_8},
-        {"BIT 3, (HL)",     16, 1,   (OpArg) 3,     &hl,            &CPU::BIT_MEM},
+        {"BIT 3, (HL)",     12, 1,   (OpArg) 3,     &hl,            &CPU::BIT_MEM},
         {"BIT 3, A",        8,  1,   (OpArg) 3,     &a,             &CPU::BIT_REG_8},
         // 0x60
         {"BIT 4, B",        8,  1,   (OpArg) 4,     &b,             &CPU::BIT_REG_8},
@@ -400,7 +400,7 @@ CPU::CPU() {
         {"BIT 4, E",        8,  1,   (OpArg) 4,     &e,             &CPU::BIT_REG_8},
         {"BIT 4, H",        8,  1,   (OpArg) 4,     &h,             &CPU::BIT_REG_8},
         {"BIT 4, L",        8,  1,   (OpArg) 4,     &l,             &CPU::BIT_REG_8},
-        {"BIT 4, (HL)",     16, 1,   (OpArg) 4,     &hl,            &CPU::BIT_MEM},
+        {"BIT 4, (HL)",     12, 1,   (OpArg) 4,     &hl,            &CPU::BIT_MEM},
         {"BIT 4, A",        8,  1,   (OpArg) 4,     &a,             &CPU::BIT_REG_8},
         {"BIT 5, B",        8,  1,   (OpArg) 5,     &b,             &CPU::BIT_REG_8},
         {"BIT 5, C",        8,  1,   (OpArg) 5,     &c,             &CPU::BIT_REG_8},
@@ -408,7 +408,7 @@ CPU::CPU() {
         {"BIT 5, E",        8,  1,   (OpArg) 5,     &e,             &CPU::BIT_REG_8},
         {"BIT 5, H",        8,  1,   (OpArg) 5,     &h,             &CPU::BIT_REG_8},
         {"BIT 5, L",        8,  1,   (OpArg) 5,     &l,             &CPU::BIT_REG_8},
-        {"BIT 5, (HL)",     16, 1,   (OpArg) 5,     &hl,            &CPU::BIT_MEM},
+        {"BIT 5, (HL)",     12, 1,   (OpArg) 5,     &hl,            &CPU::BIT_MEM},
         {"BIT 5, A",        8,  1,   (OpArg) 5,     &a,             &CPU::BIT_REG_8},
         // 0x70
         {"BIT 6, B",        8,  1,   (OpArg) 6,     &b,             &CPU::BIT_REG_8},
@@ -417,7 +417,7 @@ CPU::CPU() {
         {"BIT 6, E",        8,  1,   (OpArg) 6,     &e,             &CPU::BIT_REG_8},
         {"BIT 6, H",        8,  1,   (OpArg) 6,     &h,             &CPU::BIT_REG_8},
         {"BIT 6, L",        8,  1,   (OpArg) 6,     &l,             &CPU::BIT_REG_8},
-        {"BIT 6, (HL)",     16, 1,   (OpArg) 6,     &hl,            &CPU::BIT_MEM},
+        {"BIT 6, (HL)",     12, 1,   (OpArg) 6,     &hl,            &CPU::BIT_MEM},
         {"BIT 6, A",        8,  1,   (OpArg) 6,     &a,             &CPU::BIT_REG_8},
         {"BIT 7, B",        8,  1,   (OpArg) 7,     &b,             &CPU::BIT_REG_8},
         {"BIT 7, C",        8,  1,   (OpArg) 7,     &c,             &CPU::BIT_REG_8},
@@ -425,7 +425,7 @@ CPU::CPU() {
         {"BIT 7, E",        8,  1,   (OpArg) 7,     &e,             &CPU::BIT_REG_8},
         {"BIT 7, H",        8,  1,   (OpArg) 7,     &h,             &CPU::BIT_REG_8},
         {"BIT 7, L",        8,  1,   (OpArg) 7,     &l,             &CPU::BIT_REG_8},
-        {"BIT 7, (HL)",     16, 1,   (OpArg) 7,     &hl,            &CPU::BIT_MEM},
+        {"BIT 7, (HL)",     12, 1,   (OpArg) 7,     &hl,            &CPU::BIT_MEM},
         {"BIT 7, A",        8,  1,   (OpArg) 7,     &a,             &CPU::BIT_REG_8},
         // 0x80
         {"RES 0, B",        8,  1,   0,             &b,             &CPU::RES_REG_8},
@@ -593,7 +593,14 @@ void CPU::requestInterrupt(INTERRUPT intr) {
 // CPU functions
 void CPU::reset() {
     ime = false;
+
+    ei_called = false;
+
     halted = false;
+    stopped = false;
+
+    halt_bug = false;
+
     af = 0x01B0;
     bc = 0x0013;
     de = 0x00D8;
@@ -607,23 +614,34 @@ uint8_t CPU::clock() {
     // Check for interrupts and service
     // Even if halted, we need to call handleInterrupt because it will unhalt if an interrupt has been received
     if (handleInterrupt()) {
-        return 4;
+        return 20;
     }
 
     if (halted) {
         return 4;
     }
-    
+
+    if (ei_called) {
+        ime = true;
+        ei_called = false;
+    }
+
     // Fetch next instruction and increment pc
     uint8_t opcode = read(pc);
     INSTRUCTION &instr = lookup[opcode];
 
+    // Halt bug stops PC from being properly incremented
+    halt_bug ? halt_bug = false : pc++;
+
     // Fetch data -- 0, 1, or 2 bytes
     if (instr.data_len >= 1) {
-        fetched = read(pc + 1);
+        fetched = read(pc);
+        pc++;
     }
+
     if (instr.data_len == 2) {
-        fetched |= read(pc + 2) << 8;
+        fetched |= read(pc) << 8;
+        pc++;
     }
 
     // Handle PREFIX CB opcodes
@@ -634,9 +652,6 @@ uint8_t CPU::clock() {
 #ifdef LOGFILE
     print_log(opcode, instr);
 #endif
-
-    // Increment pc
-    pc += 1 + instr.data_len;
 
     // Set arguments
     arg1 = instr.arg1;
@@ -713,7 +728,7 @@ bool CPU::handleInterrupt() {
     uint16_t jump_addr = 0x0000;
 
     // No interrupts enabled and requested
-    if ((intrs & 0x1F) == 0) {
+    if (!(intrs & 0x1F)) {
         return false;
     }
 
@@ -771,13 +786,19 @@ uint8_t CPU::STOP() {
 }
 
 uint8_t CPU::HALT() {
-    halted = true;
+    if (!ime && read(IE) & read(IF) & 0x1F) {
+        halt_bug = true;
+    } else {
+        halted = true;
+    }
+
     return 0;
 }
 
 // Enables master interrupt flag
+// Delayed until next instruction
 uint8_t CPU::EI() {
-    ime = true;
+    ei_called = true;
     return 0;
 }
 
