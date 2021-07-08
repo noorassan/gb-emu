@@ -173,7 +173,7 @@ ControllerState SDLGameboyDriver::pollControls() {
     controls.left   = keyboard_state[SDL_SCANCODE_LEFT];
     controls.up     = keyboard_state[SDL_SCANCODE_UP];
     controls.down   = keyboard_state[SDL_SCANCODE_DOWN];
-    
+
     return controls;
 }
 

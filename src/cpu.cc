@@ -630,7 +630,7 @@ uint8_t CPU::clock() {
     uint8_t opcode = read(pc);
     INSTRUCTION &instr = lookup[opcode];
 
-    // Halt bug stops PC from being properly incremented
+    // Halt bug stops PC from being incremented
     halt_bug ? halt_bug = false : pc++;
 
     // Fetch data -- 0, 1, or 2 bytes
@@ -725,7 +725,6 @@ bool CPU::handleInterrupt() {
 
     // Interrupts that are both enabled and requested
     uint8_t intrs = intr_flags & read(IE);
-    uint16_t jump_addr = 0x0000;
 
     // No interrupts enabled and requested
     if (!(intrs & 0x1F)) {
@@ -740,6 +739,7 @@ bool CPU::handleInterrupt() {
         return false;
     }
 
+    uint16_t jump_addr = 0x0000;
     if (intrs & V_BLANK) {
         write(IF, intr_flags & ~V_BLANK);
         jump_addr = VBLANK_A;
