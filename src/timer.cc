@@ -8,8 +8,7 @@ Timer::Timer() {
 
 void Timer::clock(uint8_t clocks) {
     while (clocks > 0) {
-        uint8_t curr_clocks = (clocks > 16) ? 16 : clocks;
-        curr_clocks = 1;
+        uint8_t curr_clocks = (clocks > 4) ? 4 : clocks;
         clocks -= curr_clocks;
 
         if (wait_cycles > 0 && wait_cycles <= curr_clocks) {
