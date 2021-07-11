@@ -656,7 +656,7 @@ uint8_t CPU::clock() {
     // Set arguments
     arg1 = instr.arg1;
     arg2 = instr.arg2;
-    
+
     // Increment clock
     uint8_t cycles = instr.base_clock;
 

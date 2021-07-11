@@ -18,7 +18,18 @@ void PPU::reset() {
     pixel_line.clear();
 
     setStatus(OAM_SEARCH);
+
     ly = 0;
+    lcdc = 0x91;
+    scy = 0x00;
+    scx = 0x00;
+    lyc = 0x00;
+    bgp = 0xFC;
+    obp0 = 0xFF;
+    obp1 = 0xFF;
+    wy = 0x00;
+    wx = 0x00;
+
 }
 
 void PPU::clock(uint8_t clocks) {
@@ -26,58 +37,97 @@ void PPU::clock(uint8_t clocks) {
 
     switch (getStatus()) {
         case H_BLANK: {
-            uint32_t hblank_cycles = 376 - transfer_cycles;
-            if (cycles >= hblank_cycles) {
-                if (ly == SCREEN_HEIGHT - 1) {
-                    setStatus(V_BLANK);
-                    bus->requestInterrupt(INTERRUPT::V_BLANK);
-                } else {
-                    searchOAM(ly + 1);
-                    setStatus(OAM_SEARCH);
-                }
-
-                ly++;
-                cycles -= hblank_cycles;
-            }
+            clockedHBlank();
             break;
         }
 
         case V_BLANK: {
-            if (cycles >= 456) {
-                if (ly == 153) {
-                    this->driver->render();
-                    searchOAM(ly + 1);
-                    setStatus(OAM_SEARCH);
-                    ly = 0;
-                } else {
-                    ly++;
-                }
-
-                cycles -= 456;
-            }
+            clockedVBlank();
             break;
         }
 
         case OAM_SEARCH: {
-            if (cycles >= 80) {
-                fetchLine();
-                setStatus(PIXEL_TRANSFER);
-                cycles -= 80;
-            }
+            clockedOAMSearch();
             break;
         }
         
         case PIXEL_TRANSFER: {
-            if (cycles >= transfer_cycles) {
-                drawLine();
-                setStatus(H_BLANK);
-                cycles -= transfer_cycles;
-            }
+            clockedPixelTransfer();
             break;
         }
     }
+}
+
+
+void PPU::clockedHBlank() {
+    uint32_t hblank_cycles = 376 - transfer_cycles;
+
+    if (cycles >= hblank_cycles) {
+        if (ly == SCREEN_HEIGHT - 1) {
+            // transition to V Blank
+            setStatus(V_BLANK);
+            bus->requestInterrupt(INTERRUPT::V_BLANK);
+        } else {
+            // transition to OAM Search
+            searchOAM(ly + 1);
+            setStatus(OAM_SEARCH);
+        }
+
+        ly++;
+        checkSTATInterrupt();
+        cycles -= hblank_cycles;
+    }
+}
+
+void PPU::clockedVBlank() {
+    // All lines except line 0 and line 0x99 are 456 clocks in length
+    // Line 0x99 is only ~56 clocks
+    // Line 0 is 856 clocks -- 400 are in V Blank and the rest are OAM, Pixel Transfer, and H Blank
+    if (ly && ly != 0x99 && cycles >= 456) {
+        ly++;
+        cycles -= 456;
+    } else if (ly == 0x99 && cycles >= 56) {
+        ly = 0;
+        cycles -= 56;
+    } else if (!ly && cycles >= 400) {
+        // transition to OAM search
+        this->driver->render();
+        searchOAM(ly + 1);
+        setStatus(OAM_SEARCH);
+        cycles -= 400;
+    } else {
+        return;
+    }
 
     checkSTATInterrupt();
+}
+
+void PPU::clockedOAMSearch() {
+    if (cycles >= 80) {
+        // transition to Pixel Transfer
+        fetchLine();
+        setStatus(PIXEL_TRANSFER);
+        checkSTATInterrupt();
+        cycles -= 80;
+    }
+}
+void PPU::clockedPixelTransfer() {
+    if (cycles >= transfer_cycles) {
+        // transition to H Blank
+        drawLine();
+        setStatus(H_BLANK);
+        checkSTATInterrupt();
+        cycles -= transfer_cycles;
+    }
+}
+
+void PPU::checkSTATInterrupt() {
+    if (((stat & 0x08) && (getStatus() == H_BLANK))    ||
+        ((stat & 0x10) && (getStatus() == V_BLANK))    ||
+        ((stat & 0x20) && (getStatus() == OAM_SEARCH)) ||
+        ((stat & 0x40) && (lyc == ly))) {
+        bus->requestInterrupt(LCD_STAT);
+    }
 }
 
 void PPU::searchOAM(uint8_t line) {
@@ -326,15 +376,6 @@ void PPU::drawLine() {
     }
 }
 
-void PPU::checkSTATInterrupt() {
-    if (((stat & 0x08) && (getStatus() == H_BLANK))    ||
-        ((stat & 0x10) && (getStatus() == V_BLANK))    ||
-        ((stat & 0x20) && (getStatus() == OAM_SEARCH)) ||
-        ((stat & 0x40) && (lyc == ly))) {
-        bus->requestInterrupt(LCD_STAT);
-    }
-}
-
 uint16_t PPU::getBGTilemapStart() {
     if (lcdc & 0x08) {
         return 0x9C00;
@@ -364,8 +405,7 @@ PPU::PPU_STATUS PPU::getStatus() {
 }
 
 void PPU::setStatus(PPU_STATUS status) {
-    uint8_t stat_val = (stat & 0xFC) | status;
-    stat = stat_val;
+    stat = (stat & 0xFC) | status;
 }
 
 bool PPU::isPPUEnabled() {

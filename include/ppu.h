@@ -46,6 +46,15 @@ public:
     void connectBus(Bus *bus);
 
 private:
+    // Clocking is separated into different functions based on the current PPU state
+    void clockedHBlank();
+    void clockedVBlank();
+    void clockedOAMSearch();
+    void clockedPixelTransfer();
+
+    void checkSTATInterrupt();
+
+private:
     enum PPU_STATUS {
         H_BLANK,
         V_BLANK,
@@ -122,8 +131,6 @@ private:
 
     void drawLine();
     
-    void checkSTATInterrupt();
-
     uint16_t getBGTilemapStart();
     uint16_t getWinTilemapStart();
     uint8_t getOBJHeight();
