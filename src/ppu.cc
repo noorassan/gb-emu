@@ -56,6 +56,8 @@ void PPU::clock(uint8_t clocks) {
             break;
         }
     }
+
+    updateReg();
 }
 
 
@@ -125,8 +127,23 @@ void PPU::checkSTATInterrupt() {
     if (((stat & 0x08) && (getStatus() == H_BLANK))    ||
         ((stat & 0x10) && (getStatus() == V_BLANK))    ||
         ((stat & 0x20) && (getStatus() == OAM_SEARCH)) ||
-        ((stat & 0x40) && (lyc == ly))) {
+        ((stat & 0x40) && (stat & 0x04))) {
         bus->requestInterrupt(LCD_STAT);
+    }
+}
+
+void PPU::updateReg() {
+    // update LYC=LY bit
+    if (lyc == ly) {
+        stat |= 0x04;
+    } else {
+        stat &= 0xFB;
+    }
+
+    // if PPU is not enabled, ly = 0 and stat mode is 0
+    if (!isPPUEnabled()) {
+        stat &= 0xFC;
+        ly = 0;
     }
 }
 
@@ -156,20 +173,6 @@ void PPU::fetchLine() {
     pixel_line.clear();
 
     transfer_cycles = 172;
-    
-    // If PPU is not enabled, we give unlit pixels
-    if (!isPPUEnabled()) {
-        Pixel pixel;
-        pixel.data = 0;
-        pixel.unlit = 1;
-
-        while(pixel_line.size() < SCREEN_WIDTH) {
-            pixel_line.push_back(pixel);
-        }
-
-        return;
-    }
-
     uint8_t win_x = std::max(0, wx - 7); // WX values of 0-7 act weirdly so we just set those to 0
     uint8_t win_y = wy;
 
@@ -489,6 +492,7 @@ bool PPU::regWrite(uint16_t addr, uint8_t data) {
         default:   return false;
     }
 
+    updateReg();
     return true;
 }
 

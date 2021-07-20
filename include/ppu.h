@@ -53,6 +53,7 @@ private:
     void clockedPixelTransfer();
 
     void checkSTATInterrupt();
+    void updateReg();
 
 private:
     enum PPU_STATUS {
