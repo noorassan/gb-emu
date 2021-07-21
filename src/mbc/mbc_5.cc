@@ -43,9 +43,9 @@ bool MBC5::write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) {
 }
 
 uint16_t MBC5::getRAMBank() {
-    return ram_bank & 0x0F; //& (highestOrderBit(ram_banks) - 1);
+    return ram_bank & 0x0F & (highestOrderBit(ram_banks) - 1);
 }
 
 uint16_t MBC5::getROMBank() {
-    return (rom_bank_lo | ((rom_bank_hi & 0x01) << 8)); //& (highestOrderBit(ram_banks) - 1);
+    return (rom_bank_lo | ((rom_bank_hi & 0x01) << 8)) & (highestOrderBit(rom_banks) - 1);
 }
