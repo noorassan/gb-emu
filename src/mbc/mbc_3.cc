@@ -25,14 +25,12 @@ bool MBC3::read(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) {
         return true;
     } else if (addr >= 0xA000 && addr < 0xC000 && ram_rtc_enabled) {
         // Read from currently selected RAM/RTC bank
-        if (ram_rtc_enabled) {
-            if (ram_rtc_bank <= 0x03) {
-                mapped_addr = mapRAMAddress(addr, ram_rtc_bank & (highestOrderBit(ram_banks) - 1));
-                return true;
-            } else if (ram_rtc_bank <= 0x0C) {
-                data = getRTCData();
-                return false;
-            }
+        if (ram_rtc_bank <= 0x03) {
+            mapped_addr = mapRAMAddress(addr, ram_rtc_bank & (highestOrderBit(ram_banks) - 1));
+            return true;
+        } else if (ram_rtc_bank <= 0x0C) {
+            data = getRTCData();
+            return false;
         }
     }
 
@@ -59,15 +57,13 @@ bool MBC3::write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) {
         }
 
         last_latch_write = data;
-    } else if (addr >= 0xA000 && addr < 0xC000) {
+    } else if (addr >= 0xA000 && addr < 0xC000 && ram_rtc_enabled) {
         // Write to RAM or RTC
-        if (ram_rtc_enabled) {
-            if (ram_rtc_bank <= 0x03) {
-                mapped_addr = mapRAMAddress(addr, ram_rtc_bank & (highestOrderBit(ram_banks) - 1));
-                return true;
-            } else if (ram_rtc_bank <= 0x0C) {
-                setRTCData(data);
-            }
+        if (ram_rtc_bank <= 0x03) {
+            mapped_addr = mapRAMAddress(addr, ram_rtc_bank & (highestOrderBit(ram_banks) - 1));
+            return true;
+        } else if (ram_rtc_bank <= 0x0C) {
+            setRTCData(data);
         }
     }
 
