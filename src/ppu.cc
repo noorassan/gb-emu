@@ -33,27 +33,29 @@ void PPU::reset() {
 }
 
 void PPU::clock(uint8_t clocks) {
-    cycles += clocks;
+    if (isPPUEnabled()) {
+        cycles += clocks;
 
-    switch (getStatus()) {
-        case H_BLANK: {
-            clockedHBlank();
-            break;
-        }
+        switch (getStatus()) {
+            case H_BLANK: {
+                clockedHBlank();
+                break;
+            }
 
-        case V_BLANK: {
-            clockedVBlank();
-            break;
-        }
+            case V_BLANK: {
+                clockedVBlank();
+                break;
+            }
 
-        case OAM_SEARCH: {
-            clockedOAMSearch();
-            break;
-        }
-        
-        case PIXEL_TRANSFER: {
-            clockedPixelTransfer();
-            break;
+            case OAM_SEARCH: {
+                clockedOAMSearch();
+                break;
+            }
+
+            case PIXEL_TRANSFER: {
+                clockedPixelTransfer();
+                break;
+            }
         }
     }
 
