@@ -16,10 +16,10 @@ bool MBC2::read(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) {
         return true;
     } else if (addr >= 0x4000 && addr < 0x8000) {
         mapped_addr = mapROMAddress(addr, rom_bank);
-        return true;    
+        return true;
     } else if (addr >= 0xA000 && addr < 0xC000) {
         if (ram_enabled) {
-            data = ram[data & 0x01FF];
+            data = ram[addr & 0x01FF];
             return false;
         }
     }
@@ -33,14 +33,17 @@ bool MBC2::write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) {
 
     if (addr >= 0x0000 && addr < 0x4000) {
         if (addr & 0x0100) {
-            rom_bank = data & 0x0F & (highestOrderBit(rom_banks) - 1);
-            if (!rom_bank) rom_bank = 1;
+            if (data & 0x0F) {
+                rom_bank = data & 0x0F & (highestOrderBit(rom_banks) - 1);
+            } else {
+                rom_bank = 1;
+            }
         } else {
-            ram_enabled = data == 0x0A;
+            ram_enabled = (data & 0x0F) == 0x0A;
         }
     } else if (addr >= 0xA000 && addr < 0xC000) {
         if (ram_enabled) {
-            ram[addr & 0x01FF] = data;
+            ram[addr & 0x01FF] = data & 0x0F;
         }
     }
 
