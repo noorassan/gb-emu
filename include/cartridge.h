@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "mbc/mbc.h"
 
@@ -30,7 +31,8 @@ public:
     uint8_t read(uint16_t addr);
     void write(uint16_t addr, uint8_t data);
 
-    std::vector<uint8_t> &getRAM();
+    void saveRAM(std::ofstream &ofs);
+    void loadRAM(std::ifstream &ifs);
 
     std::string getTitle();
 

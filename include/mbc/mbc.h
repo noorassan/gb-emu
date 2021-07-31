@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 
 class MBC {
@@ -18,6 +19,9 @@ class MBC {
         // If returns true, then the write should be made to RAM using the mapped address
         // If returns false, then no action should be taken
         virtual bool write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) = 0;
+
+        virtual void saveRAM(std::ofstream &ofs) { (void) ofs; }
+        virtual void loadRAM(std::ifstream &ifs) { (void) ifs; }
 
     protected:
         const uint16_t rom_banks;

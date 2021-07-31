@@ -14,6 +14,8 @@ bool NoMBC::read(uint16_t addr, uint32_t &mapped_addr, uint8_t &data) {
 }
 
 bool NoMBC::write(uint16_t addr, uint8_t data, uint32_t &mapped_addr) {
+    (void) data;
+
     if (addr >= 0xA000 && addr < 0xC000) {
         mapped_addr = addr & 0x1FFF;
         return true;

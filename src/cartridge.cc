@@ -4,10 +4,10 @@
 
 #include "cartridge.h"
 #include "mbc/mbc_1.h"
+#include "mbc/mbc_2.h"
 #include "mbc/mbc_3.h"
 #include "mbc/mbc_5.h"
 #include "mbc/no_mbc.h"
-
 
 Cartridge::Cartridge(const std::string &filename) {
     std::ifstream ifs;
@@ -74,11 +74,6 @@ void Cartridge::write(uint16_t addr, uint8_t data) {
     }
 }
 
-// Altering the returned vector will affect cartridge state so use cautiously
-std::vector<uint8_t> &Cartridge::getRAM() {
-    return ram;
-}
-
 std::string Cartridge::getTitle() {
     return title;
 }
@@ -127,6 +122,8 @@ void Cartridge::setMBC() {
         mbc = std::make_shared<NoMBC>(rom_banks, ram_banks);
     } else if (mbc_type >= 0x01 && mbc_type <= 0x03){
         mbc = std::make_shared<MBC1>(rom_banks, ram_banks);
+    } else if (mbc_type >= 0x05 && mbc_type <= 0x06) {
+        mbc = std::make_shared<MBC2>(rom_banks, ram_banks);
     } else if (mbc_type >= 0x0F && mbc_type <= 0x13) {
        mbc = std::make_shared<MBC3>(rom_banks, ram_banks);
     } else if (mbc_type >= 0x19 && mbc_type <= 0x1E) {
@@ -136,4 +133,16 @@ void Cartridge::setMBC() {
     }
     // TODO: add other memory bank controllers
     return;
+}
+
+void Cartridge::saveRAM(std::ofstream &ofs) {
+    mbc->saveRAM(ofs);
+
+    ofs.write((char *) ram.data(), ram.size());
+}
+
+void Cartridge::loadRAM(std::ifstream &ifs) {
+    mbc->loadRAM(ifs);
+
+    ifs.read((char *) ram.data(), ram.size());
 }
