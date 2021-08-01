@@ -126,10 +126,13 @@ void PPU::clockedPixelTransfer() {
 }
 
 void PPU::checkSTATInterrupt() {
-    if (((stat & 0x08) && (getStatus() == H_BLANK))    ||
-        ((stat & 0x10) && (getStatus() == V_BLANK))    ||
-        ((stat & 0x20) && (getStatus() == OAM_SEARCH)) ||
-        ((stat & 0x40) && (stat & 0x04))) {
+    bool stat = false;
+    stat |= (stat & 0x08) && (getStatus() == H_BLANK);
+    stat |= (stat & 0x10) && (getStatus() == V_BLANK);
+    stat |= (stat & 0x20) && (getStatus() == OAM_SEARCH);
+    stat |= (stat & 0x40) && (lyc == ly) && (ly <= 0x90);
+
+    if (stat) {
         bus->requestInterrupt(LCD_STAT);
     }
 }
