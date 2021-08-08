@@ -52,8 +52,20 @@ private:
     void clockedOAMSearch();
     void clockedPixelTransfer();
 
-    void checkSTATInterrupt();
+    // Checking if STAT interrupt has been triggered
+    // Return true if STAT is fired
+    bool checkSTATHBlank();
+    bool checkSTATVBlank();
+    bool checkSTATOAM();
+    bool checkSTATLYC();
+
     void updateReg();
+
+private:
+    // These variables maintain the state of the STAT interrupt triggering
+    bool fired_vblank_stat;
+    bool fired_lyc_stat;
+    bool fired_hblank_stat;
 
 private:
     enum PPU_STATUS {

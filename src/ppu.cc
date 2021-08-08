@@ -71,14 +71,18 @@ void PPU::clockedHBlank() {
             // transition to V Blank
             setStatus(V_BLANK);
             bus->requestInterrupt(INTERRUPT::V_BLANK);
+            ly++;
+
+            checkSTATVBlank() || checkSTATLYC();
         } else {
             // transition to OAM Search
             searchOAM(ly + 1);
             setStatus(OAM_SEARCH);
+            ly++;
+
+            checkSTATOAM() || checkSTATLYC();
         }
 
-        ly++;
-        checkSTATInterrupt();
         cycles -= hblank_cycles;
     }
 }
@@ -90,20 +94,19 @@ void PPU::clockedVBlank() {
     if (ly && ly != 0x99 && cycles >= 456) {
         ly++;
         cycles -= 456;
+        checkSTATLYC();
     } else if (ly == 0x99 && cycles >= 56) {
         ly = 0;
         cycles -= 56;
+        checkSTATLYC();
     } else if (!ly && cycles >= 400) {
         // transition to OAM search
         this->driver->render();
         searchOAM(ly + 1);
         setStatus(OAM_SEARCH);
         cycles -= 400;
-    } else {
-        return;
+        checkSTATOAM();
     }
-
-    checkSTATInterrupt();
 }
 
 void PPU::clockedOAMSearch() {
@@ -111,7 +114,6 @@ void PPU::clockedOAMSearch() {
         // transition to Pixel Transfer
         fetchLine();
         setStatus(PIXEL_TRANSFER);
-        checkSTATInterrupt();
         cycles -= 80;
     }
 }
@@ -120,21 +122,57 @@ void PPU::clockedPixelTransfer() {
         // transition to H Blank
         drawLine();
         setStatus(H_BLANK);
-        checkSTATInterrupt();
+        checkSTATHBlank();
         cycles -= transfer_cycles;
     }
 }
 
-void PPU::checkSTATInterrupt() {
-    bool stat = false;
-    stat |= (stat & 0x08) && (getStatus() == H_BLANK);
-    stat |= (stat & 0x10) && (getStatus() == V_BLANK);
-    stat |= (stat & 0x20) && (getStatus() == OAM_SEARCH);
-    stat |= (stat & 0x40) && (lyc == ly) && (ly <= 0x90);
+bool PPU::checkSTATHBlank() {
+    fired_hblank_stat = stat & 0x08;
 
-    if (stat) {
+    if (fired_hblank_stat) {
         bus->requestInterrupt(LCD_STAT);
     }
+
+    return fired_hblank_stat;
+}
+
+bool PPU::checkSTATVBlank() {
+    fired_vblank_stat = stat & 0x10;
+    fired_vblank_stat &= !fired_lyc_stat;
+    fired_vblank_stat &= !fired_hblank_stat;
+
+    if (fired_vblank_stat) {
+        bus->requestInterrupt(LCD_STAT);
+    }
+
+    return fired_vblank_stat;
+}
+
+bool PPU::checkSTATOAM() {
+    bool fire_stat = stat & 0x20;
+    fire_stat &= (ly || !fired_vblank_stat);
+    fire_stat &= !fired_lyc_stat;
+    fire_stat &= !fired_hblank_stat;
+
+
+    if (fire_stat) {
+        bus->requestInterrupt(LCD_STAT);
+    }
+
+    return fire_stat;
+}
+
+bool PPU::checkSTATLYC() {
+    bool fired_stat_lyc = stat & 0x40;
+    fired_stat_lyc &= lyc == ly;
+    fired_stat_lyc &= ly <= 0x90 || !fired_vblank_stat;
+
+    if (fired_stat_lyc) {
+        bus->requestInterrupt(LCD_STAT);
+    }
+
+    return fired_stat_lyc;
 }
 
 void PPU::updateReg() {
