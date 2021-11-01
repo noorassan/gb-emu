@@ -209,7 +209,6 @@ void PPU::searchOAM(uint8_t line) {
 
         addr += 4;
     }
-
 }
 
 void PPU::fetchLine() {
@@ -362,7 +361,7 @@ void PPU::fetchOBJLine(const Sprite &sprite, uint8_t curr_line, std::array<Pixel
 
     // If sprite is vertically flipped
     if (sprite.flags & 0x40) {
-        sprite_line = obj_height - sprite_line;
+        sprite_line = (obj_height - 1) - sprite_line;
     }
 
     addr += sprite_line * 2;
